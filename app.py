@@ -1,19 +1,16 @@
-import pyautogui
 from flask import Flask
-
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 
 # app = Flask(__name__)
+driver = webdriver.Chrome('./chromedriver')
 
 
-def initialize_clicking():
-    screen_width, screen_height = pyautogui.size()
-    current_mouse_x = pyautogui.position()
-    current_mouse_y = pyautogui.position()
-    print(screen_width, screen_height, current_mouse_x, current_mouse_y)
-    pyautogui.moveTo(100, 150)
-    pyautogui.click()
-    pyautogui.click(100, 200)
-    pyautogui.write("hello world")
+def open_booking():
+    url = "https://pretix.eu/Baeder/11/"
+    driver.get(url)
+    event_date = "2022-03-04"
+
 
 
 # @app.route('/')
@@ -22,4 +19,4 @@ def initialize_clicking():
 
 
 if __name__ == '__main__':
-    initialize_clicking()
+    open_booking()
