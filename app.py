@@ -1,15 +1,22 @@
 import time
-from flask import Flask
+import schedule
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
-# app = Flask(__name__)
 driver = webdriver.Chrome('./chromedriver')
 
 
-def open_booking():
+def schedule_booking():
+    schedule.every().day.at('13:00').do(start_booking())
+    while True:
+        schedule.run_pending()
+        print("completed scheduled bookings")
+        time.sleep(1)
+
+
+def start_booking():
     url = "https://pretix.eu/Baeder/74/"
     datetime_selector = ".event-time[data-time='2022-03-04T19:00:00+00:00']"
     driver.get(url)
@@ -29,6 +36,8 @@ def open_booking():
 
     complete_checkout()
 
+    return schedule.CancelJob
+
 
 def complete_checkout():
     try:
@@ -44,6 +53,7 @@ def complete_checkout():
         confirmation_checkbox = driver.find_element(By.ID, "input_confirm_confirm_text_0")
         confirmation_checkbox.click()
         confirmation_checkbox.send_keys(Keys.TAB)
+        confirmation_checkbox.send_keys(Keys.ENTER)
 
     except NoSuchElementException as error:
         print(error)
@@ -69,10 +79,5 @@ def login():
     time.sleep(3)
 
 
-# @app.route('/')
-# def hello():
-#     return 'Hello World :)'
-
-
 if __name__ == '__main__':
-    open_booking()
+    schedule_booking()
