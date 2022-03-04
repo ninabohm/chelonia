@@ -8,17 +8,17 @@ from model.models import Booking
 from model.models import User
 from flask import Flask
 from flask import render_template, request, redirect
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from model.models import db
 import os
 
-load_dotenv()
+# load_dotenv()
 
 
 app = Flask(__name__)
-app.config.from_object(os.environ['APP_SETTINGS'])
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+# app.config.from_object(os.environ['APP_SETTINGS'])
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 app.logger.setLevel(logging.INFO)
 
 db.init_app(app)
