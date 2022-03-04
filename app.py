@@ -7,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException
 from model.models import Booking
 from model.models import User
 from flask import Flask
-from flask import render_template
+from flask import render_template, request, redirect
 from dotenv import load_dotenv
 from model.models import db
 import os
@@ -27,19 +27,28 @@ with app.app_context():
     db.create_all()
 
 
-driver = webdriver.Chrome('./chromedriver')
-user = User("Jan", "Roschke")
-db.session.add(user)
-db.session.commit()
-
-
 @app.route('/')
 def index():
     return "hello jan"
 
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        first_name = request.form["first_name"]
+        last_name = request.form["last_name"]
+        password = request.form["password"]
+        user = User(first_name, last_name, password)
+        db.session.add(user)
+        db.session.commit()
+        app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
+        return redirect('/')
+    return render_template("login.html")
+
+
 @app.route('/booking')
 def start_booking():
+    driver = webdriver.Chrome('./chromedriver')
     new_booking = Booking(user, "74", "2022-03-04T19:00:00+00:00")
     db.session.add(new_booking)
     db.session.commit()
@@ -50,12 +59,12 @@ def start_booking():
     booking_date = driver.find_element(By.CSS_SELECTOR, datetime_selector)
     booking_date.click()
 
-    # apply_voucher()
-    # complete_checkout()
+    # apply_voucher(driver)
+    # complete_checkout(driver)
     return render_template("booking.html")
 
 
-def apply_voucher():
+def apply_voucher(driver):
     voucher_field = driver.find_element(By.ID, "voucher")
     voucher_field.click()
     voucher_field.send_keys("urbansportsclub")
@@ -68,7 +77,7 @@ def apply_voucher():
     time.sleep(3)
 
 
-def complete_checkout():
+def complete_checkout(driver):
     try:
         checkout_url = "https://pretix.eu/Baeder/74/checkout/customer/"
         driver.get(checkout_url)
@@ -77,7 +86,7 @@ def complete_checkout():
         login_radio.click()
         time.sleep(3)
 
-        website_login()
+        website_login(driver)
 
         confirmation_checkbox = driver.find_element(By.ID, "input_confirm_confirm_text_0")
         confirmation_checkbox.click()
@@ -88,7 +97,7 @@ def complete_checkout():
         print(error)
 
 
-def website_login():
+def website_login(driver):
     user_email = driver.find_element(By.ID, "id_login-email")
     user_email.send_keys("nina.boehm1994@gmail.com")
     user_password = driver.find_element(By.ID, "id_login-password")
