@@ -29,11 +29,13 @@ with app.app_context():
 
 driver = webdriver.Chrome('./chromedriver')
 user = User("Jan", "Roschke")
+db.session.add(user)
+db.session.commit()
 
 
 @app.route('/')
 def index():
-    return "Helloo :)"
+    return "hello jan"
 
 
 @app.route('/booking')
@@ -107,4 +109,4 @@ def website_login():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

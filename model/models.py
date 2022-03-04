@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.declarative import declarative_base
 
 db = SQLAlchemy()
+
 
 class Booking(db.Model):
 
@@ -20,10 +20,15 @@ class Booking(db.Model):
         return f".event-time[data-time='{self.datetime_event}']"
 
 
-class User():
+class User(db.Model):
+
+    __tablename__ = "user"
+
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String())
+    last_name = db.Column(db.String())
 
     def __init__(self, first_name, last_name):
-        self.id = "1"
         self.first_name = first_name
         self.last_name = last_name
 
