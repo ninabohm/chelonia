@@ -28,12 +28,6 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    # def __init__(self, first_name, last_name, email, password_hash):
-    #     self.first_name = first_name
-    #     self.last_name = last_name
-    #     self.email = email
-    #     self.password_hash = password_hash
-
 
 class Booking(db.Model):
 

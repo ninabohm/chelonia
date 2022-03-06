@@ -1,14 +1,14 @@
 import time
 import logging
 import os
+from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
-from flask import Flask
-from flask import render_template, request, redirect, flash, url_for
+from flask import Flask, g, render_template, request, redirect, flash, url_for, jsonify, session
 from dotenv import load_dotenv
-from flask_login import LoginManager, login_user, current_user
+from flask_login import LoginManager, login_user, current_user, logout_user
 from model.models import db
 from model.models import Booking
 from model.models import User
@@ -37,12 +37,21 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
+def requires_logged_in(func):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if '_user_id' not in session:
+            return redirect(url_for('login'))
+        return func(*args, **kwargs)
+    return wrapped_func
+
+
 @app.route('/')
 def index():
-    return "hello jan"
+    return render_template("index.html")
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/user/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if request.method == 'POST':
@@ -54,11 +63,20 @@ def register():
         db.session.add(user)
         db.session.commit()
         app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
-        return redirect('/login')
+        return redirect(url_for('login'))
     return render_template("register.html", form=form)
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/user')
+@requires_logged_in
+def get_users():
+    users = []
+    for user in db.session.query(User).all():
+        users.append(user)
+    return render_template('users.html', users=users)
+
+
+@app.route('/user/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if request.method == 'POST':
@@ -72,8 +90,16 @@ def login():
     return render_template("login.html", form=form)
 
 
+@app.route('/user/logout')
+@requires_logged_in
+def logout():
+    app.logger.info(f"ending session {session}")
+    logout_user()
+    return redirect(url_for('login'))
+
+
 @app.route('/booking')
-def start_booking():
+def booking():
     driver = webdriver.Chrome('./chromedriver')
     new_booking = Booking(user, "74", "2022-03-04T19:00:00+00:00")
     db.session.add(new_booking)
