@@ -1,30 +1,41 @@
 import time
 import logging
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
-from model.models import Booking
-from model.models import User
 from flask import Flask
 from flask import render_template, request, redirect
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
+from flask_login import LoginManager
 from model.models import db
-import os
+from model.models import Booking
+from model.models import User
+from forms.forms import RegistrationForm, LoginForm
 
-# load_dotenv()
+load_dotenv()
 
 
 app = Flask(__name__)
-# app.config.from_object(os.environ['APP_SETTINGS'])
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+app.config.from_object(os.environ['APP_SETTINGS'])
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 app.logger.setLevel(logging.INFO)
 
+# does this need to go?
 db.init_app(app)
 
 with app.app_context():
     db.create_all()
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
 
 
 @app.route('/')
@@ -34,16 +45,29 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+
     if request.method == 'POST':
-        first_name = request.form["first_name"]
-        last_name = request.form["last_name"]
+        email = request.form["email"]
         password = request.form["password"]
-        user = User(first_name, last_name, password)
+        return redirect('/')
+    return render_template("login.html")
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+    if request.method == 'POST':
+        user = User()
+        user.first_name = request.form.get('first_name')
+        user.last_name = request.form.get('last_name')
+        user.email = request.form.get('email')
+        password = request.form.get('password')
+        user.password_hash = user.set_password(password)
         db.session.add(user)
         db.session.commit()
         app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
-        return redirect('/')
-    return render_template("login.html")
+        return redirect('/login')
+    return render_template("register.html", form=form)
 
 
 @app.route('/booking')
@@ -118,6 +142,6 @@ def website_login(driver):
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT'))
     app.run(debug=True, host='0.0.0.0', port=port)
 
