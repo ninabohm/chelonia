@@ -6,16 +6,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 from flask import Flask
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, flash, url_for
 from dotenv import load_dotenv
-from flask_login import LoginManager
+from flask_login import LoginManager, login_user, current_user
 from model.models import db
 from model.models import Booking
 from model.models import User
 from forms.forms import RegistrationForm, LoginForm
 
 load_dotenv()
-
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -35,22 +34,12 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return User.query.get(user_id)
 
 
 @app.route('/')
 def index():
     return "hello jan"
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-
-    if request.method == 'POST':
-        email = request.form["email"]
-        password = request.form["password"]
-        return redirect('/')
-    return render_template("login.html")
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -61,13 +50,26 @@ def register():
         user.first_name = request.form.get('first_name')
         user.last_name = request.form.get('last_name')
         user.email = request.form.get('email')
-        password = request.form.get('password')
-        user.password_hash = user.set_password(password)
+        user.password = request.form.get('password')
         db.session.add(user)
         db.session.commit()
         app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
         return redirect('/login')
     return render_template("register.html", form=form)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if request.method == 'POST':
+        email = request.form.get("email")
+        password = request.form.get("password")
+        user = db.session.query(User).filter_by(email=email).first()
+        if user is not None and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('index'))
+        flash('Invalid email or password')
+    return render_template("login.html", form=form)
 
 
 @app.route('/booking')
