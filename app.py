@@ -9,10 +9,9 @@ from selenium.common.exceptions import NoSuchElementException
 from flask import Flask, g, render_template, request, redirect, flash, url_for, jsonify, session
 from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, current_user, logout_user
-from model.models import db
-from model.models import Booking
-from model.models import User
-from forms.forms import RegistrationForm, LoginForm
+from sqlalchemy.exc import IntegrityError
+from model.models import db, Booking, User, Venue
+from forms.forms import RegistrationForm, LoginForm, VenueForm, BookingForm
 
 load_dotenv()
 
@@ -46,12 +45,22 @@ def requires_logged_in(func):
     return wrapped_func
 
 
+def requires_not_logged_in(func):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if '_user_id' in session:
+            return redirect(url_for('index'))
+        return func(*args, **kwargs)
+    return wrapped_func
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
 
 
 @app.route('/user/register', methods=['GET', 'POST'])
+@requires_not_logged_in
 def register():
     form = RegistrationForm()
     if request.method == 'POST':
@@ -60,10 +69,14 @@ def register():
         user.last_name = request.form.get('last_name')
         user.email = request.form.get('email')
         user.password = request.form.get('password')
-        db.session.add(user)
-        db.session.commit()
-        app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
-        return redirect(url_for('login'))
+        try:
+            db.session.add(user)
+            db.session.commit()
+            app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
+            return redirect(url_for('login'))
+        except IntegrityError:
+            db.session.rollback()
+            return render_template("register.html", form=form, error=IntegrityError)
     return render_template("register.html", form=form)
 
 
@@ -77,6 +90,7 @@ def get_users():
 
 
 @app.route('/user/login', methods=['GET', 'POST'])
+@requires_not_logged_in
 def login():
     form = LoginForm()
     if request.method == 'POST':
@@ -98,8 +112,58 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/venue')
+@requires_logged_in
+def get_venues():
+    app.logger.info(f"GET venues called by user {current_user.id}")
+    venues = []
+    for venue in db.session.query(Venue).all():
+        venues.append(venue)
+    return render_template("venues.html", venues=venues)
+
+
+@app.route('/venue/create', methods=['GET', 'POST'])
+@requires_logged_in
+def create_venue():
+    form = VenueForm()
+    if request.method == 'POST':
+        venue_name = request.form.get("venue_name")
+        venue_url = request.form.get("venue_url")
+        venue = Venue(venue_name, venue_url)
+        db.session.add(venue)
+        db.session.commit()
+        app.logger.info(f"added venue {venue.venue_name} with id {venue.id}")
+        return redirect(url_for('get_venues'))
+    return render_template("create_venue.html", form=form)
+
+
 @app.route('/booking')
-def booking():
+@requires_logged_in
+def get_bookings():
+    bookings = []
+    for booking in db.session.query(Booking).all():
+        bookings.append(booking)
+    return render_template("bookings.html", bookings=bookings)
+
+
+@app.route('/booking/create', methods=['GET', 'POST'])
+@requires_logged_in
+def create_booking():
+    form = BookingForm()
+    if request.method == 'POST':
+        venue_name = request.form.get("venue_name")
+        date_event = request.form.get("date_event")
+        time_event = request.form.get("time_event")
+        venue_id = db.session.query(Venue.id).filter_by(venue_name=venue_name).first()
+        booking = Booking(venue_id[0], date_event, time_event, current_user.id)
+        db.session.add(booking)
+        db.session.commit()
+        app.logger.info(f"added booking at venue {booking.venue_id} with id {booking.id}")
+        return redirect(url_for('get_bookings'))
+    return render_template("create_booking.html", form=form)
+
+
+def start_booking():
     driver = webdriver.Chrome('./chromedriver')
     new_booking = Booking(user, "74", "2022-03-04T19:00:00+00:00")
     db.session.add(new_booking)
@@ -113,7 +177,6 @@ def booking():
 
     # apply_voucher(driver)
     # complete_checkout(driver)
-    return render_template("booking.html")
 
 
 def apply_voucher(driver):

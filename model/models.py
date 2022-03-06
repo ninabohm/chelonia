@@ -13,9 +13,11 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String())
     last_name = db.Column(db.String())
-    email = db.Column(db.String())
+    email = db.Column(db.String(), unique=True)
     password_hash = db.Column(db.String())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
+
+    bookings = db.relationship("Booking", backref="user")
 
     @property
     def password(self):
@@ -31,18 +33,36 @@ class User(UserMixin, db.Model):
 
 class Booking(db.Model):
 
-    __tablename__ = "bookings"
+    __tablename__ = "booking"
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer(), db.ForeignKey("venue.id"))
+    date_event = db.Column(db.String())
+    time_event = db.Column(db.String())
+    created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+    def __init__(self, venue_id, date_event, time_event, user_id):
+        self.venue_id = venue_id
+        self.date_event = date_event
+        self.time_event = time_event
+        self.user_id = user_id
+
+    def generate_datetime_selector(self):
+        return f".event-time[data-time='{self.date_event} {self.time_event}']"
+
+
+class Venue(db.Model):
+
+    __tablename__ = "venue"
 
     id = db.Column(db.Integer, primary_key=True)
     venue_name = db.Column(db.String())
-    datetime_event = db.Column(db.String())
+    venue_url = db.Column(db.String())
+    created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
+    bookings = db.relationship("Booking", backref="venue")
 
-    def __init__(self, user, venue_name, datetime_event):
-        self.user = user
+    def __init__(self, venue_name, venue_url):
         self.venue_name = venue_name
-        self.datetime_event = datetime_event
-
-    def generate_datetime_selector(self):
-        return f".event-time[data-time='{self.datetime_event}']"
-
+        self.venue_url = venue_url
 
