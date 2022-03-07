@@ -44,6 +44,8 @@ class Booking(db.Model):
     confirmed = db.Column(db.String())
     confirmation_code = db.Column(db.String())
 
+    reservation = db.relationship("Reservation", backref="booking")
+
     def __init__(self, venue_id, date_event, time_event, user_id):
         self.venue_id = venue_id
         self.date_event = date_event

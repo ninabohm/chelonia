@@ -206,8 +206,10 @@ def check_if_less_than_96_hours_ahead(booking_id):
 def schedule_reservation(booking_id):
     app.logger.info(f"scheduling reservation for booking_id {booking_id}")
     new_reservation = Reservation(booking_id, current_user.id)
-
+    # celery
     new_reservation.status = "SCHEDULED"
+    db.session.add(new_reservation)
+    db.session.commit()
 
 
 def start_reservation(booking_id, user_id):

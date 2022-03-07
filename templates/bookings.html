@@ -17,6 +17,7 @@
             <th>Created at</th>
             <th>Confirmed</th>
             <th>Confirmation code</th>
+            <th>Reservation status</th>
         </tr>
         {% for booking in bookings %}
         <tr>
@@ -28,6 +29,9 @@
             <td>{{ booking.created_at }}</td>
             <td>{{ booking.confirmed }}</td>
             <td>{{ booking.confirmation_code }}</td>
+            {% for reservation in booking.reservation %}
+            <td>{{ reservation.status }}</td>
+            {% endfor %}
         </tr>
         {% endfor %}
     </table>
