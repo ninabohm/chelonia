@@ -1,0 +1,1 @@
+{{ form.date_event(class_="form-control mt-2",  id="date_event", placeholder="Date")}}

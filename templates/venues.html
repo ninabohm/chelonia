@@ -6,7 +6,24 @@
 
 {% block content %}
 <h1>Venues</h1>
-{% for venue in venues %}
-<p> {{ venue.id }} {{ venue.venue_name }} {{venue.venue_url}}</p>
-{% endfor %}
+<div class="container col-6 d-flex justify-content-center">
+    <table class="table table-responsive" style="text-align: center">
+        <tr>
+            <th>Venue id</th>
+            <th>Venue name</th>
+            <th>URL</th>
+            <th>Created at</th>
+            <th>Bookings</th>
+        </tr>
+        {% for venue in venues %}
+        <tr>
+            <td>{{ venue.id }}</td>
+            <td>{{ venue.venue_name }}</td>
+            <td>{{ venue.venue_url }}</td>
+            <td>{{ venue.created_at }}</td>
+            <td>{{ venue.bookings }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}

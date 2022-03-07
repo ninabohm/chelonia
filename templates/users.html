@@ -6,7 +6,24 @@
 
 {% block content %}
 <h1>Users</h1>
-{% for user in users %}
-<p> {{ user.first_name }} </p>
-{% endfor %}
+<div class="container col-6 d-flex justify-content-center">
+    <table class="table table-responsive" style="text-align: center">
+        <tr>
+            <th>User Id</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>E-mail</th>
+            <th>Bookings</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.first_name }}</td>
+            <td>{{ user.last_name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.bookings }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}

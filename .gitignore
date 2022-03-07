@@ -134,3 +134,5 @@ dmypy.json
 chromedriver
 
 .DS_Store
+
+sandbox.txt

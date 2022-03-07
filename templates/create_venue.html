@@ -16,7 +16,7 @@
     </div>
     <div class="form-group col-lg-4 mx-auto mt-2" id="venue_url">
         {{ form.venue_url.label }}
-        {{ form.venue_url(class_="form-control mt-2",  id="venue_url", placeholder="Last name")}}
+        {{ form.venue_url(class_="form-control mt-2",  id="venue_url", placeholder="Venue url")}}
         {% for error in form.venue_url.errors %}
         <p>{{ error }}</p>
         {% endfor %}

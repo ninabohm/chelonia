@@ -1,4 +1,4 @@
-from wtforms import Form, StringField, PasswordField, IntegerField, SelectField
+from wtforms import Form, StringField, PasswordField, IntegerField, SelectField, DateField, TimeField
 from wtforms.validators import DataRequired, Length
 
 
@@ -20,6 +20,6 @@ class VenueForm(Form):
 
 
 class BookingForm(Form):
-    venue_name = SelectField("Venue name", coerce=int, validators=[DataRequired(), Length(max=150)])
-    date_event = StringField("Date", [DataRequired(), Length(max=150)])
-    time_event = StringField("Time", [DataRequired(), Length(max=150)])
+    venue_id = SelectField("Venue name", coerce=int, validators=[DataRequired(), Length(max=150)])
+    date_event = DateField("Date", format='%Y-%m-%d', validators=[DataRequired(), Length(max=150)])
+    time_event = TimeField("Time", format='%H:%M:%S', validators=[DataRequired(), Length(max=150)])
