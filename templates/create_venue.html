@@ -1,12 +1,10 @@
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Create venue</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %} Create venue {% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
 <h1>Create venue</h1>
 <form class="venue-form" id="venue-form" action="/venue/create" method="POST">
     <div class="form-group col-lg-4 mx-auto mt-2" id="first_name">
@@ -27,5 +25,4 @@
         <button class="btn btn-primary mt-4" type="submit">Create venue</button>
     </div>
 </form>
-</body>
-</html>
+{% endblock %}

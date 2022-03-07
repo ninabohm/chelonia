@@ -1,15 +1,12 @@
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Venues</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %} Venues {% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
 <h1>Venues</h1>
 {% for venue in venues %}
 <p> {{ venue.id }} {{ venue.venue_name }} {{venue.venue_url}}</p>
 {% endfor %}
-</body>
-</html>
+{% endblock %}
