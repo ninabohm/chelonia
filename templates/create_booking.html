@@ -7,9 +7,9 @@
 {% block content %}
 <h1>Create booking</h1>
 <form class="booking-form" id="booking-form" action="/booking/create" method="POST">
-    <div class="form-group col-lg-4 mx-auto mt-2" id="venue_url">
+    <div class="form-group col-lg-4 mx-auto mt-2" id="venue_name">
         {{ form.venue_name.label }}
-        {{ form.venue_name(class_="form-control mt-2",  id="venue_name", placeholder="Venue name")}}
+        {{ form.venue_name(class_="form-select mt-2",  id="venue_name", placeholder="Venue name")}}
         {% for error in form.venue_name.errors %}
         <p>{{ error }}</p>
         {% endfor %}

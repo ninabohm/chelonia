@@ -49,7 +49,7 @@ def requires_not_logged_in(func):
     @wraps(func)
     def wrapped_func(*args, **kwargs):
         if '_user_id' in session:
-            return redirect(url_for('index'))
+            return redirect(url_for('create_booking'))
         return func(*args, **kwargs)
     return wrapped_func
 
@@ -149,16 +149,20 @@ def get_bookings():
 @app.route('/booking/create', methods=['GET', 'POST'])
 @requires_logged_in
 def create_booking():
+    available_venues = db.session.query(Venue).all()
+    venue_choices = [(item.id, item.venue_name) for item in available_venues]
     form = BookingForm()
+    form.venue_name.choices = venue_choices
+    app.logger.info(f"venue choices: {venue_choices}")
     if request.method == 'POST':
         venue_name = request.form.get("venue_name")
         date_event = request.form.get("date_event")
         time_event = request.form.get("time_event")
         venue_id = db.session.query(Venue.id).filter_by(venue_name=venue_name).first()
-        booking = Booking(venue_id[0], date_event, time_event, current_user.id)
-        db.session.add(booking)
-        db.session.commit()
-        app.logger.info(f"added booking at venue {booking.venue_id} with id {booking.id}")
+        # booking = Booking(venue_id[0], date_event, time_event, current_user.id)
+        # db.session.add(booking)
+        # db.session.commit()
+        # app.logger.info(f"added booking at venue {booking.venue_id} with id {booking.id}")
         return redirect(url_for('get_bookings'))
     return render_template("create_booking.html", form=form)
 
