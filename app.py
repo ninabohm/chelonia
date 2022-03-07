@@ -4,6 +4,7 @@ import os
 from os import environ
 from functools import wraps
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
@@ -173,10 +174,9 @@ def create_booking():
 @requires_logged_in
 def reservation(booking_id):
     if request.method == 'POST':
-        reservation = Reservation(booking_id, current_user.id)
-        db.session.add(reservation)
+        new_reservation = start_reservation(booking_id, current_user.id)
+        db.session.add(new_reservation)
         db.session.commit()
-        start_reservation(booking_id, reservation.id)
 
     reservations = []
     for item in db.session.query(Reservation).all():
@@ -184,11 +184,31 @@ def reservation(booking_id):
     return render_template("reservations.html", reservations=reservations)
 
 
-def start_reservation(booking_id, reservation_id):
-    # driver = webdriver.Chrome('./chromedriver')
+def start_reservation(booking_id, user_id):
+    ser = Service('./chromedriver')
+    options = webdriver.ChromeOptions()
+    driver = webdriver.Chrome(service=ser, options=options)
+
     booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
     venue_url = booking_venue.venue_url
     datetime_selector = generate_datetime_selector(booking_id)
+
+    driver.get(venue_url)
+    date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
+    date_field.click()
+    time.sleep(3)
+    apply_voucher(driver)
+    complete_checkout(driver)
+
+    new_reservation = Reservation(booking_id, user_id)
+    new_reservation.confirmed = True
+
+    booking = db.query(Booking).filter_by(id=booking_id).first()
+    booking.confirmation_code = get_confirmation_code(driver)
+    if booking.confirmation_code is not None:
+        booking.confirmed = True
+
+    return new_reservation
 
 
 def generate_datetime_selector(booking_id):
@@ -196,24 +216,9 @@ def generate_datetime_selector(booking_id):
     time_event = db.session.query(Booking.time_event).filter_by(id=booking_id).first()[0]
     time_event_formatted = datetime.strptime(time_event, '%H:%M')
     time_event_corrected = time_event_formatted - timedelta(hours=+1)
-    # this is still wrong!
-    datetime_selector = f".event-time[data-time='{date_event}T{time_event_corrected}:00+00:00']"
+    datetime_selector = f".event-time[data-time='{date_event}T{time_event_corrected.time()}+00:00']"
 
-    # datetime_selector = ".event-time[data-time='2022-03-04T19:00:00+00:00']"
-    print(datetime_selector)
     return datetime_selector
-
-
-def backup_start_reservation():
-    driver = webdriver.Chrome('./chromedriver')
-    venue_url = "https://pretix.eu/Baeder/74/"
-    # datetime_selector =
-    driver.get(venue_url)
-    booking_date = driver.find_element(By.CSS_SELECTOR, datetime_selector)
-    booking_date.click()
-
-    # apply_voucher(driver)
-    # complete_checkout(driver)
 
 
 def apply_voucher(driver):
@@ -244,9 +249,10 @@ def complete_checkout(driver):
         confirmation_checkbox.click()
         confirmation_checkbox.send_keys(Keys.TAB)
         confirmation_checkbox.send_keys(Keys.ENTER)
+        time.sleep(30)
 
     except NoSuchElementException as error:
-        print(error)
+        app.logger.info(error)
 
 
 def website_login(driver):
@@ -267,6 +273,13 @@ def website_login(driver):
     checkbox_save.send_keys(Keys.TAB)
     checkbox_save.send_keys(Keys.ENTER)
     time.sleep(3)
+
+
+def get_confirmation_code(driver):
+    current_url = driver.current_url
+    print(current_url)
+    confirmation_code = current_url[34:39]
+    return confirmation_code
 
 
 if __name__ == '__main__':

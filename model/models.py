@@ -42,6 +42,7 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     confirmed = db.Column(db.String())
+    confirmation_code = db.Column(db.String())
 
     def __init__(self, venue_id, date_event, time_event, user_id):
         self.venue_id = venue_id
@@ -59,7 +60,6 @@ class Reservation(db.Model):
     booking_id = db.Column(db.Integer(), db.ForeignKey("booking.id"))
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    confirmed = db.Column(db.String())
 
     def __init__(self, booking_id, user_id):
         self.booking_id = booking_id
