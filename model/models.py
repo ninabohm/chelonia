@@ -60,11 +60,12 @@ class Reservation(db.Model):
     booking_id = db.Column(db.Integer(), db.ForeignKey("booking.id"))
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    status = db.Column(db.String())
 
     def __init__(self, booking_id, user_id):
         self.booking_id = booking_id
         self.user_id = user_id
-        self.confirmed = False
+        self.status = "RUNNING"
 
 
 class Venue(db.Model):

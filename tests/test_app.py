@@ -1,5 +1,5 @@
 import unittest
-from app import app, generate_datetime_selector, start_reservation, get_confirmation_code
+from app import app, generate_datetime_selector, start_reservation, get_confirmation_code, check_if_less_than_96_hours_ahead
 from model.models import Reservation
 from flask_login import current_user
 from selenium import webdriver
@@ -30,8 +30,24 @@ class TestApp(unittest.TestCase):
             url = "https://pretix.eu/Baeder/74/order/WMHPW/pddi5nhiweavfy3r/?thanks=1"
             ser = Service('./chromedriver')
             options = webdriver.ChromeOptions()
+            options.add_argument("headless")
             driver = webdriver.Chrome(service=ser, options=options)
             driver.get(url)
 
             self.assertEqual(get_confirmation_code(driver), "WMHPW")
+
+    def test_should_return_true_given_less_than_96_ahead(self):
+        with app.app_context():
+            booking_id = "36"
+            self.assertTrue(check_if_less_than_96_hours_ahead(booking_id))
+
+    def test_should_return_false_given_more_than_96_ahead(self):
+        with app.app_context():
+            booking_id = "38"
+            self.assertFalse(check_if_less_than_96_hours_ahead(booking_id))
+
+    def test_should_return_false_given_more_than_96_ahead_2(self):
+        with app.app_context():
+            booking_id = "39"
+            self.assertFalse(check_if_less_than_96_hours_ahead(booking_id))
 

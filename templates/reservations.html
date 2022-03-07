@@ -11,22 +11,17 @@
         <tr>
             <th>Reservation id</th>
             <th>Booking id</th>
-            <th>Venue id</th>
-            <th>Date</th>
-            <th>Time</th>
             <th>User id</th>
             <th>Created at</th>
-            <th>Confirmed</th>
+            <th>Status</th>
         </tr>
         {% for reservation in reservations %}
         <tr>
             <td>{{ reservation.id }}</td>
-            <td>{{ reservation.venue_id }}</td>
-            <td>{{ reservation.booking_date_event }}</td>
-            <td>{{ reservation.booking_time_event }}</td>
+            <td>{{ reservation.booking_id }}</td>
             <td>{{ reservation.user_id }}</td>
             <td>{{ reservation.created_at }}</td>
-            <td>{{ reservation.confirmed }}</td>
+            <td>{{ reservation.status }}</td>
         </tr>
         {% endfor %}
     </table>

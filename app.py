@@ -170,18 +170,44 @@ def create_booking():
     return render_template("create_booking.html", form=form)
 
 
-@app.route('/reservation/<string:booking_id>', methods=['GET', 'POST'])
+@app.route('/reservation')
 @requires_logged_in
-def reservation(booking_id):
-    if request.method == 'POST':
-        new_reservation = start_reservation(booking_id, current_user.id)
-        db.session.add(new_reservation)
-        db.session.commit()
-
+def get_reservations():
     reservations = []
     for item in db.session.query(Reservation).all():
         reservations.append(item)
     return render_template("reservations.html", reservations=reservations)
+
+
+@app.route('/reservation/<string:booking_id>', methods=['GET', 'POST'])
+@requires_logged_in
+def reservation(booking_id):
+    if request.method == 'POST':
+        if check_if_less_than_96_hours_ahead(booking_id):
+            new_reservation = start_reservation(booking_id, current_user.id)
+            db.session.add(new_reservation)
+            db.session.commit()
+            app.logger.info(f"reservation with reservation_id {new_reservation.id} added for booking_id {booking_id}")
+        schedule_reservation(booking_id)
+
+
+def check_if_less_than_96_hours_ahead(booking_id):
+    date_event = db.session.query(Booking.date_event).filter_by(id=booking_id).first()[0]
+    time_event = db.session.query(Booking.time_event).filter_by(id=booking_id).first()[0]
+    datetime_event_str = date_event + " " + time_event
+    datetime_event = datetime.strptime(datetime_event_str, '%Y-%m-%d %H:%M')
+    current_datetime = datetime.utcnow()
+    time_difference = datetime_event - current_datetime
+    if time_difference.total_seconds() > 345600:
+        return False
+    return True
+
+
+def schedule_reservation(booking_id):
+    app.logger.info(f"scheduling reservation for booking_id {booking_id}")
+    new_reservation = Reservation(booking_id, current_user.id)
+
+    new_reservation.status = "SCHEDULED"
 
 
 def start_reservation(booking_id, user_id):
@@ -196,17 +222,22 @@ def start_reservation(booking_id, user_id):
     driver.get(venue_url)
     date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
     date_field.click()
-    time.sleep(3)
+    time.sleep(2)
     apply_voucher(driver)
     complete_checkout(driver)
 
     new_reservation = Reservation(booking_id, user_id)
     new_reservation.confirmed = True
+    new_reservation.status = "CONFIRMED"
 
-    booking = db.query(Booking).filter_by(id=booking_id).first()
+    booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
+
     if booking.confirmation_code is not None:
         booking.confirmed = True
+        app.logger.info(f"booking {booking_id} confirmed")
+
+    download_pdf(driver, booking_id)
 
     return new_reservation
 
@@ -231,7 +262,8 @@ def apply_voucher(driver):
 
     add_to_cart_button = driver.find_element(By.ID, "btn-add-to-cart")
     add_to_cart_button.click()
-    time.sleep(3)
+    app.logger.info("voucher applied")
+    time.sleep(2)
 
 
 def complete_checkout(driver):
@@ -241,7 +273,7 @@ def complete_checkout(driver):
 
         login_radio = driver.find_element(By.ID, "input_customer_login")
         login_radio.click()
-        time.sleep(3)
+        time.sleep(2)
 
         website_login(driver)
 
@@ -249,7 +281,8 @@ def complete_checkout(driver):
         confirmation_checkbox.click()
         confirmation_checkbox.send_keys(Keys.TAB)
         confirmation_checkbox.send_keys(Keys.ENTER)
-        time.sleep(30)
+        app.logger.info("checkout completed")
+        time.sleep(2)
 
     except NoSuchElementException as error:
         app.logger.info(error)
@@ -264,7 +297,7 @@ def website_login(driver):
     user_password.send_keys(Keys.TAB)
     user_password.send_keys(Keys.TAB)
     user_password.send_keys(Keys.ENTER)
-    time.sleep(3)
+    time.sleep(2)
 
     checkbox_save = driver.find_element(By.CSS_SELECTOR, "input[type='checkbox']")
     checkbox_save.click()
@@ -272,14 +305,22 @@ def website_login(driver):
     checkbox_save.send_keys(Keys.TAB)
     checkbox_save.send_keys(Keys.TAB)
     checkbox_save.send_keys(Keys.ENTER)
-    time.sleep(3)
+    app.logger.info("website login completed")
+    time.sleep(2)
 
 
 def get_confirmation_code(driver):
     current_url = driver.current_url
-    print(current_url)
     confirmation_code = current_url[34:39]
+    app.logger.info(f"confirmation code generated")
     return confirmation_code
+
+
+def download_pdf(driver, booking_id):
+    pdf_download_button = driver.find_element(By.CSS_SELECTOR, "button[class='btn btn-sm btn-primary']")
+    pdf_download_button.click()
+    time.sleep(8)
+    app.logger.info(f"downloaded PDF for booking {booking_id}")
 
 
 if __name__ == '__main__':
