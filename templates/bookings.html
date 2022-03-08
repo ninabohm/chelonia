@@ -15,7 +15,6 @@
             <th>Time</th>
             <th>User id</th>
             <th>Created at</th>
-            <th>Confirmed</th>
             <th>Confirmation code</th>
             <th>Reservation status</th>
         </tr>
@@ -27,7 +26,6 @@
             <td>{{ booking.time_event }}</td>
             <td>{{ booking.user_id }}</td>
             <td>{{ booking.created_at }}</td>
-            <td>{{ booking.confirmed }}</td>
             <td>{{ booking.confirmation_code }}</td>
             {% for reservation in booking.reservation %}
             <td>{{ reservation.status }}</td>

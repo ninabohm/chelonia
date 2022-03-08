@@ -41,7 +41,6 @@ class Booking(db.Model):
     time_event = db.Column(db.String())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    confirmed = db.Column(db.String())
     confirmation_code = db.Column(db.String())
 
     reservation = db.relationship("Reservation", backref="booking")
@@ -51,7 +50,6 @@ class Booking(db.Model):
         self.date_event = date_event
         self.time_event = time_event
         self.user_id = user_id
-        self.confirmed = False
 
 
 class Reservation(db.Model):
