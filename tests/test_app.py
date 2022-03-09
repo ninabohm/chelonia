@@ -1,5 +1,6 @@
 import unittest
 from app import app, generate_datetime_selector, start_reservation, get_confirmation_code, check_if_less_than_96_hours_ahead
+from app import calculate_earliest_reservation_datetime
 from model.models import Reservation
 from flask_login import current_user
 from selenium import webdriver
@@ -50,4 +51,9 @@ class TestApp(unittest.TestCase):
         with app.app_context():
             booking_id = "39"
             self.assertFalse(check_if_less_than_96_hours_ahead(booking_id))
+
+    def test_should_return_datetime_exactly_96_hours_ahead(self):
+        with app.app_context():
+            booking_id = "52"
+
 

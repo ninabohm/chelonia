@@ -1,14 +1,13 @@
 {% extends "base.html" %}
-{% block title %} Reservations {% endblock %}
+{% block title %} Show reservation {% endblock %}
 {% block head %}
 {{ super() }}
 {% endblock %}
 
 {% block content %}
-<h1>Reservations</h1>
-<p> {{ message }} </p>
-
+<h1>Show reservation</h1>
 <div class="container d-flex justify-content-center">
+    <p>Successfully added a reservation</p>
     <table class="table table-responsive" style="text-align: center">
         <tr>
             <th>Reservation id</th>
@@ -17,7 +16,6 @@
             <th>Created at</th>
             <th>Status</th>
         </tr>
-        {% for reservation in reservations %}
         <tr>
             <td>{{ reservation.id }}</td>
             <td>{{ reservation.booking_id }}</td>
@@ -25,7 +23,6 @@
             <td>{{ reservation.created_at }}</td>
             <td>{{ reservation.status }}</td>
         </tr>
-        {% endfor %}
     </table>
 </div>
 {% endblock %}

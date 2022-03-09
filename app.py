@@ -19,14 +19,11 @@ from flask_celery import make_celery
 
 
 app = Flask(__name__)
-app.config['APP_SETTINGS'] = environ.get('APP_SETTINGS')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
-app.config['SECRET_KEY'] = environ.get('SECRET_KEY')
-app.config['FLASK_ENV'] = environ.get('FLASK_ENV')
+if app.config["ENV"] == "production":
+    app.config.from_object("config.ProductionConfig")
+else:
+    app.config.from_object("config.DevelopmentConfig")
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/2'
-app.config['CELERY_RESULT_BACKEND'] = environ.get('CELERY_RESULT_BACKEND')
-
 app.logger.setLevel(logging.INFO)
 
 celery = make_celery(app)
@@ -35,7 +32,7 @@ db.init_app(app)
 
 with app.app_context():
     migrate = Migrate(app, db)
-    # db.create_all()
+    #db.create_all()
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -185,24 +182,35 @@ def get_reservations():
     return render_template("reservations.html", reservations=reservations)
 
 
-@app.route('/reservation/<string:booking_id>', methods=['GET', 'POST'])
+@app.route('/reservation/<booking_id>', methods=['GET', 'POST'])
 @requires_logged_in
 def reservation(booking_id):
     if request.method == 'POST':
         if check_if_less_than_96_hours_ahead(booking_id):
-            start_reservation(booking_id, current_user.id)
-        schedule_reservation(booking_id)
+            new_reservation = start_reservation(booking_id)
+            return render_template('reservation_show.html', reservation=new_reservation)
+        new_reservation = schedule_reservation(booking_id)
+        return render_template('reservation_show.html', reservation=new_reservation)
 
 
 @app.route('/reservation/schedule/<booking_id>')
-def process(booking_id):
-    create_reservation.delay(booking_id)
-    return 'asynch request sent'
+@requires_logged_in
+def schedule_reservation(booking_id):
+    create_reservation_schedule_task.delay(booking_id)
+    return "scheduled reservation"
 
 
 @celery.task(name='app.schedule_reservation')
-def create_reservation(string):
-    return string[::-1]
+def create_reservation_schedule_task(booking_id):
+    app.logger.info(f"starting task: reservation for booking_id {booking_id}")
+    time.sleep(5)
+    new_reservation = start_reservation(booking_id)
+    app.logger.info(f"task executed: reservation for booking_id {booking_id}")
+    return new_reservation
+
+
+def calculate_earliest_reservation_datetime():
+    return 0
 
 
 def check_if_less_than_96_hours_ahead(booking_id):
@@ -212,13 +220,14 @@ def check_if_less_than_96_hours_ahead(booking_id):
     datetime_event = datetime.strptime(datetime_event_str, '%Y-%m-%d %H:%M')
     current_datetime = datetime.utcnow()
     time_difference = datetime_event - current_datetime
-    if time_difference.total_seconds() > 345600:
+    # if time_difference.total_seconds() > 345600:
+    if time_difference.total_seconds() > 600:
         return False
     return True
 
 
-def start_reservation(booking_id, user_id):
-    new_reservation = Reservation(booking_id, user_id)
+def start_reservation(booking_id):
+    new_reservation = Reservation(booking_id)
     db.session.add(new_reservation)
     db.session.commit()
     app.logger.info(f"reservation with reservation_id {new_reservation.id} added for booking_id {booking_id}")
@@ -226,12 +235,10 @@ def start_reservation(booking_id, user_id):
     ser = Service('./chromedriver')
     options = webdriver.ChromeOptions()
     driver = webdriver.Chrome(service=ser, options=options)
-
     booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
-    venue_url = booking_venue.venue_url
     datetime_selector = generate_datetime_selector(booking_id)
 
-    driver.get(venue_url)
+    driver.get(booking_venue.venue_url)
     date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
     date_field.click()
     time.sleep(2)

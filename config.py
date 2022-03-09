@@ -1,5 +1,4 @@
 import os
-basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config(object):
@@ -7,7 +6,6 @@ class Config(object):
     TESTING = False
     CSRF_ENABLED = True
     SECRET_KEY = os.environ['SECRET_KEY']
-    SQL_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
 
 
 class ProductionConfig(Config):
@@ -17,4 +15,11 @@ class ProductionConfig(Config):
 class DevelopmentConfig(Config):
     DEBUG = True
     DEVELOPMENT = True
+    SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
+    DATADOG_ENV = os.environ['DATADOG_ENV']
+    FLASK_ENV = os.environ['FLASK_ENV']
+    PORT = os.environ['PORT']
+    CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 
