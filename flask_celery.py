@@ -15,5 +15,4 @@ def make_celery(app):
                 return self.run(*args, **kwargs)
 
     celery.Task = ContextTask
-    app.logger.info("celery initialized")
     return celery
