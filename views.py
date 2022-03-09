@@ -185,8 +185,12 @@ def create_reservation_schedule_task(booking_id):
     return new_reservation
 
 
-def calculate_earliest_reservation_datetime():
-    return 0
+def calculate_earliest_reservation_datetime(booking):
+    booking_datetime = booking.date_event + "T" + booking.time_event
+    booking_datetime_formatted = datetime.strptime(booking_datetime, '%Y-%m-%dT%H:%M')
+    future_datetime = booking_datetime_formatted - timedelta(hours=96)
+    future_datetime_string = future_datetime.strftime('%Y-%m-%dT%H:%M')
+    return future_datetime_string
 
 
 def check_if_less_than_96_hours_ahead(booking_id):
