@@ -136,6 +136,7 @@ chromedriver
 .DS_Store
 
 sandbox.txt
+sandbox.py
 
 test.db
 
