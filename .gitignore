@@ -136,3 +136,5 @@ chromedriver
 .DS_Store
 
 sandbox.txt
+
+tst.db

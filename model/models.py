@@ -9,6 +9,7 @@ db = SQLAlchemy(app)
 # with app.app_context():
 # migrate = Migrate(app, db)
 
+
 class User(UserMixin, db.Model):
 
     __tablename__ = "user"
