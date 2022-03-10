@@ -143,9 +143,11 @@ def create_booking():
         booking = Booking(venue_id, date_event, time_event, current_user.id)
         db.session.add(booking)
         db.session.commit()
+        booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(booking)
+        db.session.commit()
         app.logger.info(f"added booking at venue {booking.venue_id} with id {booking.id}")
-        reservation(booking.id)
-        return redirect(url_for('get_bookings'))
+        create_reservation(booking.id)
+        return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
 
 
@@ -160,56 +162,51 @@ def get_reservations():
 
 @app.route('/reservation/<booking_id>', methods=['GET', 'POST'])
 @requires_logged_in
-def reservation(booking_id):
+def create_reservation(booking_id):
     if request.method == 'POST':
         current_datetime = datetime.utcnow()
-        if check_if_less_than_96_hours_ahead(booking_id, current_datetime):
-            new_reservation = start_reservation(booking_id)
-            return render_template('reservation_show.html', reservation=new_reservation)
-        new_reservation = schedule_reservation(booking_id, current_datetime)
-        return render_template('reservation_show.html', reservation=new_reservation)
+        if check_if_reservation_possible_now(booking_id, current_datetime):
+            return start_reservation(booking_id)
+        current_datetime_str = str(current_datetime)
+        return schedule_reservation(booking_id, current_datetime_str)
 
 
-def schedule_reservation(booking_id, current_datetime):
-    create_reservation_schedule_task.delay(booking_id, current_datetime)
+def schedule_reservation(booking_id, current_datetime_str):
+    create_reservation_schedule_task.delay(booking_id, current_datetime_str)
     return "scheduled reservation"
 
 
 @celery.task(name='app.schedule_reservation')
-def create_reservation_schedule_task(booking_id, current_datetime):
+def create_reservation_schedule_task(booking_id, current_datetime_str):
     app.logger.info(f"starting task: reservation for booking_id {booking_id}")
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    earliest_reservation_time = calculate_earliest_reservation_datetime(booking)
-    sleep_seconds = calculate_timedelta_in_seconds(earliest_reservation_time, current_datetime)
+    current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
+    app.logger.info(f"reservation for booking_id {booking_id} will start on {booking.earliest_reservation_datetime}")
+    sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_reservation_datetime, current_datetime)
+    app.logger.info(f"waiting for {sleep_seconds} seconds to start reservation")
     time.sleep(sleep_seconds)
-    new_reservation = start_reservation(booking_id)
     app.logger.info(f"task executed: reservation for booking_id {booking.id}")
-    return new_reservation
+    return start_reservation(booking_id)
 
 
 def calculate_earliest_reservation_datetime(booking):
     booking_datetime_str = booking.date_event + "T" + booking.time_event
     booking_datetime = datetime.strptime(booking_datetime_str, '%Y-%m-%dT%H:%M')
-    earliest_reservation_time = booking_datetime - timedelta(hours=96)
-    return earliest_reservation_time
+    return booking_datetime - timedelta(hours=96)
 
 
 def calculate_timedelta_in_seconds(earliest_reservation_time, current_datetime):
     delta = earliest_reservation_time - current_datetime
-    seconds = delta.total_seconds()
-    return seconds
+    return delta.total_seconds()
 
 
-def check_if_less_than_96_hours_ahead(booking_id, current_datetime):
+def check_if_reservation_possible_now(booking_id, current_datetime):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    datetime_event_str = booking.date_event + " " + booking.time_event
-    datetime_event = datetime.strptime(datetime_event_str, '%Y-%m-%d %H:%M')
-    time_difference = datetime_event - current_datetime
-    # if time_difference.total_seconds() > 345600:
-    # testing: 5 min * 60 sec/min = 300 sec
-    if time_difference.total_seconds() > 300:
-        return False
-    return True
+    possible_now = booking.earliest_reservation_datetime <= current_datetime
+    if possible_now:
+        app.logger.info(f"reservation for booking_id {booking.id} possible now")
+    app.logger.info(f"reservation for booking_id {booking.id} not possible yet. waiting...")
+    return possible_now
 
 
 def start_reservation(booking_id):

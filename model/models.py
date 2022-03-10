@@ -3,11 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-# from flask_migrate import Migrate
+from flask_migrate import Migrate
 
 db = SQLAlchemy(app)
-# with app.app_context():
-# migrate = Migrate(app, db)
+with app.app_context():
+    migrate = Migrate(app, db)
 
 
 class User(UserMixin, db.Model):
@@ -47,8 +47,8 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     confirmation_code = db.Column(db.String())
-
     reservation = db.relationship("Reservation", backref="booking")
+    earliest_reservation_datetime = db.Column(db.DateTime())
 
     def __init__(self, venue_id, date_event, time_event, user_id):
         self.venue_id = venue_id
@@ -86,3 +86,5 @@ class Venue(db.Model):
         self.venue_name = venue_name
         self.venue_url = venue_url
 
+
+db.create_all()
