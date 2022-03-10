@@ -138,3 +138,5 @@ chromedriver
 sandbox.txt
 
 test.db
+
+/migrations
