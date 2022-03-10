@@ -236,7 +236,6 @@ def start_reservation(booking_id):
         app.logger.info(f"reservation for booking_id {booking_id} confirmed")
 
     download_pdf(driver, booking_id)
-
     return new_reservation
 
 

@@ -1,6 +1,8 @@
 import unittest
 from model.models import *
+from views import *
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import current_user
 
 
 class TestBooking(unittest.TestCase):
@@ -51,3 +53,24 @@ class TestBooking(unittest.TestCase):
         db.session.commit()
         booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         self.assertEqual(booking.user_id, user.id)
+
+    def test_given_reservation_return_booking_id(self):
+        with app.app_context():
+            with app.test_client() as client:
+                client.get('/')
+                new_user = User()
+                db.session.add(new_user)
+                db.session.commit()
+                user = db.session.query(User).order_by(User.id.desc()).first()
+                current_user = user
+                venue_id = "12"
+                date_event = "2022-03-10"
+                time_event = "14:00"
+                new_booking = Booking(venue_id, date_event, time_event, user.id)
+                db.session.add(new_booking)
+                db.session.commit()
+                booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
+                reservation = Reservation(booking.id)
+                db.session.add(reservation)
+                db.session.commit()
+                self.assertEqual(reservation.booking_id, booking.id)

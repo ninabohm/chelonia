@@ -118,7 +118,3 @@ class TestApp(unittest.TestCase):
     #         assert response.status_code == 302
     #         assert request.path == "/user/login"
 
-    def test_given_email_password_match_should_return_200(self):
-        with app.test_client() as client:
-            response = client.post("/user/login", follow_redirects=True)
-            assert response.status_code == 200
