@@ -1,7 +1,5 @@
-import unittest, pytest, os
-from datetime import datetime
-from app import app
-from flask import Flask, g, render_template, request, redirect, flash, url_for, jsonify, session
+import unittest
+import pytest
 from views import generate_datetime_selector, get_confirmation_code, check_if_less_than_96_hours_ahead, calculate_earliest_reservation_datetime
 from views import calculate_timedelta_in_seconds
 from selenium import webdriver
@@ -23,16 +21,13 @@ class TestApp(unittest.TestCase):
             assert response._status_code == 200
 
     def test_returns_correct_datetime_selector(self):
-        with app.app_context():
-            booking_id = "26"
-            self.assertEqual(generate_datetime_selector(booking_id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
-
-    # def test_starts_selenium_with_url(self):
-    #     with app.app_context():
-    #         booking_id = "26"
-    #         user_id = "2"
-    #         new_reservation = start_reservation(booking_id, user_id)
-    #         self.assertIsInstance(new_reservation, Reservation)
+        date_event = "2022-03-07"
+        time_event = "20:15"
+        new_booking = Booking("4", date_event, time_event, "1")
+        db.session.add(new_booking)
+        db.session.commit()
+        booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
+        self.assertEqual(generate_datetime_selector(booking.id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
 
     def test_returns_confirmation_code_from_url(self):
         with app.app_context():
@@ -49,8 +44,8 @@ class TestApp(unittest.TestCase):
         date_event = "2022-03-11"
         time_event = "10:00"
         new_booking = Booking("4", date_event, time_event, "1")
-        self.db.session.add(new_booking)
-        self.db.session.commit()
+        db.session.add(new_booking)
+        db.session.commit()
         booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         current_datetime = datetime(2022, 3, 10, 8, 27, 7, 637999)
         self.assertTrue(check_if_less_than_96_hours_ahead(booking.id, current_datetime))
@@ -59,8 +54,8 @@ class TestApp(unittest.TestCase):
         date_event = "2022-03-16"
         time_event = "20:00"
         new_booking = Booking("4", date_event, time_event, "1")
-        self.db.session.add(new_booking)
-        self.db.session.commit()
+        db.session.add(new_booking)
+        db.session.commit()
         booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         current_datetime = datetime(2022, 3, 10, 8, 27, 7, 637999)
         self.assertFalse(check_if_less_than_96_hours_ahead(booking.id, current_datetime))
@@ -69,8 +64,8 @@ class TestApp(unittest.TestCase):
         date_event = "2023-04-26"
         time_event = "20:00"
         new_booking = Booking("4", date_event, time_event, "1")
-        self.db.session.add(new_booking)
-        self.db.session.commit()
+        db.session.add(new_booking)
+        db.session.commit()
         booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         current_datetime = datetime(2022, 3, 10, 8, 27, 7, 637999)
         self.assertFalse(check_if_less_than_96_hours_ahead(booking.id, current_datetime))
