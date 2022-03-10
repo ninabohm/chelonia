@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
 
     bookings = db.relationship("Booking", backref="user")
+    reservations = db.relationship("Reservation", backref="user")
 
     @property
     def password(self):

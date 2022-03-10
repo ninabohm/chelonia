@@ -1,5 +1,6 @@
 from wtforms import Form, StringField, PasswordField, IntegerField, SelectField, DateField, TimeField
 from wtforms.validators import DataRequired, Length
+from datetime import datetime
 
 
 class RegistrationForm(Form):
@@ -21,5 +22,5 @@ class VenueForm(Form):
 
 class BookingForm(Form):
     venue_id = SelectField("Venue name", coerce=int, validators=[DataRequired(), Length(max=150)])
-    date_event = DateField("Date", format='%Y-%m-%d', validators=[DataRequired(), Length(max=150)])
-    time_event = TimeField("Time", format='%H:%M:%S', validators=[DataRequired(), Length(max=150)])
+    date_event = DateField("Date", format='%Y-%m-%d', default=datetime.today, validators=[DataRequired(), Length(max=150)])
+    time_event = TimeField("Time", format='%H:%M', default=datetime.now(), validators=[DataRequired(), Length(max=150)])
