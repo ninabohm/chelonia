@@ -141,3 +141,4 @@ sandbox.py
 test.db
 
 /migrations
+/migration*
