@@ -1,13 +1,13 @@
 from app import app, login_manager, celery
-import time
+import time, json
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
-from flask import Flask, g, render_template, request, redirect, flash, url_for, jsonify, session
-from flask_login import LoginManager, login_user, current_user, logout_user
+from flask import Flask, g, render_template, request, redirect, flash, url_for, session, jsonify
+from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from sqlalchemy.exc import IntegrityError
 from model.models import db, Booking, User, Venue, Reservation
 from forms.forms import RegistrationForm, LoginForm, VenueForm, BookingForm
@@ -17,15 +17,6 @@ from datetime import datetime, timedelta
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
-
-
-def requires_logged_in(func):
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        if '_user_id' not in session:
-            return redirect(url_for('login'))
-        return func(*args, **kwargs)
-    return wrapped_func
 
 
 def requires_not_logged_in(func):
@@ -64,7 +55,7 @@ def register():
 
 
 @app.route('/user')
-@requires_logged_in
+@login_required
 def get_users():
     users = []
     for user in db.session.query(User).all():
@@ -88,25 +79,25 @@ def login():
 
 
 @app.route('/user/logout')
-@requires_logged_in
+@login_required
 def logout():
     app.logger.info(f"ending session {session}")
     logout_user()
     return redirect(url_for('login'))
 
 
-@app.route('/venue')
-@requires_logged_in
-def get_venues():
-    app.logger.info(f"GET venues called by user {current_user.id}")
-    venues = []
-    for venue in db.session.query(Venue).all():
-        venues.append(venue)
-    return render_template("venues.html", venues=venues)
+# @app.route('/venue')
+# @login_required
+# def get_venues():
+#     app.logger.info(f"GET venues called by user {current_user.id}")
+#     venues = []
+#     for venue in db.session.query(Venue).all():
+#         venues.append(venue)
+#     return render_template("venues.html", venues=venues)
 
 
 @app.route('/venue/create', methods=['GET', 'POST'])
-@requires_logged_in
+@login_required
 def create_venue():
     form = VenueForm()
     if request.method == 'POST':
@@ -120,8 +111,30 @@ def create_venue():
     return render_template("create_venue.html", form=form)
 
 
+@app.route('/venue', methods=['GET'])
+@login_required
+def get_venues():
+    venues = db.session.query(Venue).all()
+    data = []
+    for venue in venues:
+        obj = {
+            'id': venue.id,
+            'venue_name': venue.venue_name
+        }
+        data.append(obj)
+    response = app.response_class(
+        response=json.dumps(data),
+        status=200,
+        mimetype='application/json'
+    )
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        return response
+    return render_template("venues.html", venues=data)
+
+
 @app.route('/booking')
-@requires_logged_in
+@login_required
 def get_bookings():
     bookings = []
     for booking in db.session.query(Booking).all():
@@ -130,7 +143,7 @@ def get_bookings():
 
 
 @app.route('/booking/create', methods=['GET', 'POST'])
-@requires_logged_in
+@login_required
 def create_booking():
     available_venues = db.session.query(Venue).all()
     venue_choices = [(item.id, item.venue_name) for item in available_venues]
@@ -152,7 +165,7 @@ def create_booking():
 
 
 @app.route('/reservation')
-@requires_logged_in
+@login_required
 def get_reservations():
     reservations = []
     for item in db.session.query(Reservation).all():
@@ -161,7 +174,7 @@ def get_reservations():
 
 
 @app.route('/reservation/<booking_id>', methods=['GET', 'POST'])
-@requires_logged_in
+@login_required
 def create_reservation(booking_id):
     if request.method == 'POST':
         current_datetime = datetime.utcnow()

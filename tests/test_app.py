@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from views import *
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -13,12 +14,13 @@ class TestApp(unittest.TestCase):
         app.config.from_object("config.TestingConfig")
         db.session.close()
         db.drop_all()
+        self.client = app.test_client
         db.create_all()
+        self.booking = {}
 
     def test_given_app_running_index_endpoint_returns_200(self):
-        with app.test_client() as client:
-            response = client.get("/")
-            assert response.status_code == 200
+        response = self.client().get("/", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
 
     def test_returns_correct_datetime_selector(self):
         date_event = "2022-03-07"
@@ -112,9 +114,40 @@ class TestApp(unittest.TestCase):
     #     actual = create_reservation_schedule_task(booking.id, current_datetime_str)
     #     self.assertIsInstance(actual, Reservation)
 
-    # def test_given_no_user_logged_in_should_redirect_to_login(self):
-    #     with app.test_client() as client:
-    #         response = client.get("/booking", follow_redirects=True)
-    #         assert response.status_code == 302
-    #         assert request.path == "/user/login"
+    def test_given_no_login_get_booking_returns_401(self):
+        response = self.client().get("/booking", follow_redirects=True)
+        self.assertEqual(response.status_code, 401)
+
+    def test_given_no_login_get_user_returns_401(self):
+        response = self.client().get("/user", follow_redirects=True)
+        self.assertEqual(response.status_code, 401)
+
+    def test_given_no_login_get_venue_returns_401(self):
+        response = self.client().get("/venue", follow_redirects=True)
+        self.assertEqual(response.status_code, 401)
+
+    def test_post_user_login(self):
+        response = self.client().post('/user/login')
+        self.assertEqual(response.status_code, 200)
+
+    @mock.patch('flask_login.utils._get_user')
+    def test_given_login_get_booking_returns_200(self, current_user):
+        data = {
+            'email': 'alice@wonderland.com',
+            'password': 'supersecure'
+        }
+        current_user.return_value = mock.Mock(is_authenticated=True, **data)
+        response = self.client().get("/booking", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+    @mock.patch('flask_login.utils._get_user')
+    def test_given_login_get_venue_returns_200(self, current_user):
+        data = {
+            'email': 'alice@wonderland.com',
+            'password': 'supersecure'
+        }
+        current_user.return_value = mock.Mock(is_authenticated=True, **data)
+        response = self.client().get("/venue", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
 
