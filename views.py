@@ -67,7 +67,7 @@ def login():
     return render_template("login.html", form=form)
 
 
-@app.route('/user/logout')
+@app.route('/user/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     app.logger.info(f"ending session {session}")
@@ -121,7 +121,25 @@ def get_bookings():
     bookings = db.session.query(Booking).all()
     data = []
     for booking in bookings:
-        data.append(booking)
+        obj = {
+            'id': booking.id,
+            'venue_id': booking.venue_id,
+            'date_event': booking.date_event,
+            'time_event': booking.time_event,
+            'user_id': booking.user_id,
+            'created_at': booking.created_at,
+            'confirmation_code': booking.confirmation_code,
+            'reservation_status': booking.reservation
+        }
+        data.append(obj)
+    response = app.response_class(
+        response=json.dumps(data, default=str),
+        status=200,
+        mimetype='application/json'
+    )
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        return response
     return render_template("bookings.html", bookings=bookings)
 
 

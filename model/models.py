@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(), unique=True)
     password_hash = db.Column(db.String())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
+    authenticated = db.Column(db.Boolean, default=False)
 
     bookings = db.relationship("Booking", backref="user")
     reservations = db.relationship("Reservation", backref="user")
@@ -35,6 +36,18 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def is_active(self):
+        return True
+
+    def get_id(self):
+        return self.id
+
+    def is_authenticated(self):
+        return self.authenticated
+
+    def is_anonymous(self):
+        return False
+
 
 class Booking(db.Model):
 
@@ -47,7 +60,7 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     confirmation_code = db.Column(db.String())
-    reservation = db.relationship("Reservation", backref="booking")
+    reservation = db.relationship("Reservation", backref="booking", uselist=False)
     earliest_reservation_datetime = db.Column(db.DateTime())
 
     def __init__(self, venue_id, date_event, time_event, user_id):
