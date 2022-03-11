@@ -129,9 +129,10 @@ def get_venues():
 @app.route('/booking')
 @login_required
 def get_bookings():
-    bookings = []
-    for booking in db.session.query(Booking).all():
-        bookings.append(booking)
+    bookings = db.session.query(Booking).all()
+    data = []
+    for booking in bookings:
+        data.append(booking)
     return render_template("bookings.html", bookings=bookings)
 
 
