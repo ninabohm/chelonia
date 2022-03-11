@@ -1,7 +1,6 @@
 from app import app, login_manager, celery
 import time
 import json
-import jwt
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
