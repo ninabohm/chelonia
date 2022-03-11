@@ -86,16 +86,6 @@ def logout():
     return redirect(url_for('login'))
 
 
-# @app.route('/venue')
-# @login_required
-# def get_venues():
-#     app.logger.info(f"GET venues called by user {current_user.id}")
-#     venues = []
-#     for venue in db.session.query(Venue).all():
-#         venues.append(venue)
-#     return render_template("venues.html", venues=venues)
-
-
 @app.route('/venue/create', methods=['GET', 'POST'])
 @login_required
 def create_venue():
@@ -119,11 +109,14 @@ def get_venues():
     for venue in venues:
         obj = {
             'id': venue.id,
-            'venue_name': venue.venue_name
+            'venue_name': venue.venue_name,
+            'venue_url': venue.venue_url,
+            'created_at': venue.created_at,
+            'bookings': venue.bookings
         }
         data.append(obj)
     response = app.response_class(
-        response=json.dumps(data),
+        response=json.dumps(data, default=str),
         status=200,
         mimetype='application/json'
     )
