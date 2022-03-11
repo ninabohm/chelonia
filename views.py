@@ -19,22 +19,12 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
-def requires_not_logged_in(func):
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        if '_user_id' in session:
-            return redirect(url_for('create_booking'))
-        return func(*args, **kwargs)
-    return wrapped_func
-
-
 @app.route('/')
 def index():
     return render_template("index.html")
 
 
 @app.route('/user/register', methods=['GET', 'POST'])
-@requires_not_logged_in
 def register():
     form = RegistrationForm()
     if request.method == 'POST':
@@ -64,7 +54,6 @@ def get_users():
 
 
 @app.route('/user/login', methods=['GET', 'POST'])
-@requires_not_logged_in
 def login():
     form = LoginForm()
     if request.method == 'POST':
