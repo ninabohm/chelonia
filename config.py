@@ -27,7 +27,6 @@ class TestingConfig(Config):
     DEVELOPMENT = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
     DATADOG_ENV = os.environ['DATADOG_ENV']
-    FLASK_ENV = os.environ['FLASK_ENV']
     PORT = os.environ['PORT']
     CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
     SQLALCHEMY_TRACK_MODIFICATIONS = False
