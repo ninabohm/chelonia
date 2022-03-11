@@ -36,6 +36,20 @@
             <p>{{ error }}</p>
             {% endfor %}
         </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.venue_email.label }}
+            {{ form.venue_email(class_="form-control mt-2", id="venue_email", placeholder="Venue E-mail")}}
+            {% for error in form.venue_email.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.venue_password.label }}
+            {{ form.venue_password(class_="form-control mt-2", id="venue_password", placeholder="Venue password")}}
+            {% for error in form.venue_password.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
         <div>
             <button class="btn btn-primary mt-4" type="submit">Register</button>
         </div>

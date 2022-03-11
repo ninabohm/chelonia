@@ -21,9 +21,10 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     authenticated = db.Column(db.Boolean, default=False)
-
     bookings = db.relationship("Booking", backref="user")
     reservations = db.relationship("Reservation", backref="user")
+    venue_email = db.Column(db.String())
+    venue_password = db.Column(db.String())
 
     @property
     def password(self):

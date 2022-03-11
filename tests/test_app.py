@@ -150,4 +150,15 @@ class TestApp(unittest.TestCase):
         response = self.client().get("/venue", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
 
-
+    def test_should_return_venue_url(self):
+        venue = Venue("somename", "https://pretix.eu/Baeder/74/")
+        db.session.add(venue)
+        db.session.commit()
+        db.session.query(Venue)
+        venue_db = db.session.query(Venue).order_by(Venue.id.desc()).first()
+        booking = Booking(venue_db.id, "2022-03-11", "20:00", "1")
+        db.session.add(booking)
+        db.session.commit()
+        booking_db = db.session.query(Booking).order_by(Booking.id.desc()).first()
+        venue_url = db.session.query(Venue.venue_url).join(Booking).filter_by(id=booking_db.id).first()[0]
+        self.assertEqual(venue_url, 'https://pretix.eu/Baeder/74/')

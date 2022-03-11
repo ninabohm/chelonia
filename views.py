@@ -34,6 +34,8 @@ def register():
         user.last_name = request.form.get('last_name')
         user.email = request.form.get('email')
         user.password = request.form.get('password')
+        user.venue_email = request.form.get('venue_email')
+        user.venue_password = request.form.get('venue_password')
         try:
             db.session.add(user)
             db.session.commit()
@@ -41,7 +43,8 @@ def register():
             return redirect(url_for('login'))
         except IntegrityError:
             db.session.rollback()
-            return render_template("register.html", form=form, error=IntegrityError)
+            message = "An account with this email already exists. Please try again"
+            return render_template("register.html", form=form, error=message)
     return render_template("register.html", form=form)
 
 
@@ -87,7 +90,7 @@ def login():
 @app.route('/user/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
-    app.logger.info(f"ending session {session}")
+    app.logger.info(f"logging out user {current_user.id}")
     logout_user()
     return redirect(url_for('login'))
 
@@ -272,20 +275,16 @@ def start_reservation(booking_id, current_user_id):
     new_reservation = Reservation(booking_id, current_user_id)
     db.session.add(new_reservation)
     db.session.commit()
-    app.logger.info(f"reservation with reservation_id {new_reservation.id} added for booking_id {booking_id}")
+    app.logger.info(f"started reservation with id {new_reservation.id} for booking_id {booking_id}")
+
 
     ser = Service('./chromedriver')
     options = webdriver.ChromeOptions()
     driver = webdriver.Chrome(service=ser, options=options)
-    booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
-    datetime_selector = generate_datetime_selector(booking_id)
 
-    driver.get(booking_venue.venue_url)
-    date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
-    date_field.click()
-    time.sleep(2)
+    choose_ticket(driver, booking_id)
     apply_voucher(driver)
-    complete_checkout(driver)
+    complete_checkout(driver, booking_id)
 
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
@@ -294,9 +293,23 @@ def start_reservation(booking_id, current_user_id):
         new_reservation.status = "CONFIRMED"
         db.session.commit()
         app.logger.info(f"reservation for booking_id {booking_id} confirmed")
-
-    download_pdf(driver, booking_id)
+    try:
+        download_pdf(driver, booking_id)
+    except NoSuchElementException:
+        app.logger.info(NoSuchElementException)
+        message = "Sorry, something went wrong"
+        return render_template('message.html', message=message)
     return new_reservation
+
+
+
+def choose_ticket(driver, booking_id):
+    booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
+    datetime_selector = generate_datetime_selector(booking_id)
+    driver.get(booking_venue.venue_url)
+    date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
+    date_field.click()
+    time.sleep(2)
 
 
 def generate_datetime_selector(booking_id):
@@ -322,9 +335,10 @@ def apply_voucher(driver):
     time.sleep(2)
 
 
-def complete_checkout(driver):
+def complete_checkout(driver, booking_id):
+    venue_url = db.session.query(Venue.venue_url).join(Booking).filter_by(id=booking_id).first()[0]
     try:
-        checkout_url = "https://pretix.eu/Baeder/74/checkout/customer/"
+        checkout_url = f"{venue_url}checkout/customer/"
         driver.get(checkout_url)
 
         login_radio = driver.find_element(By.ID, "input_customer_login")
@@ -340,15 +354,17 @@ def complete_checkout(driver):
         app.logger.info("checkout completed")
         time.sleep(2)
 
-    except NoSuchElementException as error:
-        app.logger.info(error)
+    except NoSuchElementException:
+        app.logger.info(NoSuchElementException)
+        message = "Sorry, something went wrong"
+        return render_template('message.html', message=message)
 
 
 def website_login(driver):
     user_email = driver.find_element(By.ID, "id_login-email")
-    user_email.send_keys("nina.boehm1994@gmail.com")
+    user_email.send_keys(current_user.venue_email)
     user_password = driver.find_element(By.ID, "id_login-password")
-    user_password.send_keys("Pgvx/pF4;87$")
+    user_password.send_keys(current_user.venue_password)
     user_password.send_keys(Keys.TAB)
     user_password.send_keys(Keys.TAB)
     user_password.send_keys(Keys.TAB)

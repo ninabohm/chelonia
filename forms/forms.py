@@ -9,6 +9,8 @@ class RegistrationForm(FlaskForm):
     last_name = StringField("Last name", [DataRequired(), Length(min=1, max=150)])
     email = StringField("E-mail", [DataRequired(), Length(max=150)])
     password = PasswordField("Password", [DataRequired(), Length(max=150)])
+    venue_email = StringField("Venue E-mail", [DataRequired(), Length(max=150)])
+    venue_password = PasswordField("Venue password", [DataRequired(), Length(max=150)])
 
 
 class LoginForm(FlaskForm):
