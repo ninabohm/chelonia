@@ -48,10 +48,26 @@ def register():
 @app.route('/user')
 @login_required
 def get_users():
-    users = []
-    for user in db.session.query(User).all():
-        users.append(user)
-    return render_template('users.html', users=users)
+    users = db.session.query(User).all()
+    data = []
+    for user in users:
+        obj = {
+            'id': user.id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'bookings': user.bookings
+        }
+        data.append(obj)
+    response = app.response_class(
+        response=json.dumps(data, default=str),
+        status=200,
+        mimetype='application/json'
+    )
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        return response
+    return render_template('users.html', users=data)
 
 
 @app.route('/user/login', methods=['GET', 'POST'])
