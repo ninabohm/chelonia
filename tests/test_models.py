@@ -70,7 +70,7 @@ class TestBooking(unittest.TestCase):
                 db.session.add(new_booking)
                 db.session.commit()
                 booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
-                reservation = Reservation(booking.id)
+                reservation = Reservation(booking.id, current_user.id)
                 db.session.add(reservation)
                 db.session.commit()
                 self.assertEqual(reservation.booking_id, booking.id)

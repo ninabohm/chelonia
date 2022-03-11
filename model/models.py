@@ -80,9 +80,10 @@ class Reservation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     status = db.Column(db.String())
 
-    def __init__(self, booking_id):
+    def __init__(self, booking_id, user_id):
         self.booking_id = booking_id
-        self.status = "RUNNING"
+        self.status = "STARTED"
+        self.user_id = user_id
 
 
 class Venue(db.Model):

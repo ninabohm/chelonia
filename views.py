@@ -1,5 +1,7 @@
 from app import app, login_manager, celery
-import time, json
+import time
+import json
+import jwt
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -129,7 +131,7 @@ def get_bookings():
             'user_id': booking.user_id,
             'created_at': booking.created_at,
             'confirmation_code': booking.confirmation_code,
-            'reservation_status': booking.reservation
+            'reservation': booking.reservation
         }
         data.append(obj)
     response = app.response_class(
@@ -165,6 +167,33 @@ def create_booking():
     return render_template("create_booking.html", form=form)
 
 
+@app.route('/booking/<booking_id>')
+@login_required
+def get_booking_by_id(booking_id):
+    booking = db.session.query(Booking).filter_by(id=booking_id).first()
+    data = [
+        {
+            'id': booking.id,
+            'venue_id': booking.venue_id,
+            'date_event': booking.date_event,
+            'time_event': booking.time_event,
+            'user_id': booking.user_id,
+            'created_at': booking.created_at,
+            'confirmation_code': booking.confirmation_code,
+            'reservation_status': booking.reservation
+        }
+    ]
+    response = app.response_class(
+        response=json.dumps(data, default=str),
+        status=200,
+        mimetype='application/json'
+    )
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        return response
+    return render_template("booking_show.html", booking=booking)
+
+
 @app.route('/reservation')
 @login_required
 def get_reservations():
@@ -180,18 +209,19 @@ def create_reservation(booking_id):
     if request.method == 'POST':
         current_datetime = datetime.utcnow()
         if check_if_reservation_possible_now(booking_id, current_datetime):
-            return start_reservation(booking_id)
+            return start_reservation(booking_id, current_user.id)
         current_datetime_str = str(current_datetime)
-        return schedule_reservation(booking_id, current_datetime_str)
+        schedule_reservation(booking_id, current_datetime_str, current_user.id)
+        return"scheduled reservation for you"
 
 
-def schedule_reservation(booking_id, current_datetime_str):
-    create_reservation_schedule_task.delay(booking_id, current_datetime_str)
+def schedule_reservation(booking_id, current_datetime_str, current_user_id):
+    create_reservation_schedule_task.delay(booking_id, current_datetime_str, current_user_id)
     return "scheduled reservation"
 
 
-# @celery.task(name='app.schedule_reservation')
-def create_reservation_schedule_task(booking_id, current_datetime_str):
+@celery.task(name='app.schedule_reservation')
+def create_reservation_schedule_task(booking_id, current_datetime_str, current_user_id):
     app.logger.info(f"starting task: reservation for booking_id {booking_id}")
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
@@ -200,7 +230,7 @@ def create_reservation_schedule_task(booking_id, current_datetime_str):
     app.logger.info(f"waiting for {sleep_seconds} seconds to start reservation")
     time.sleep(sleep_seconds)
     app.logger.info(f"task executed: reservation for booking_id {booking.id}")
-    return start_reservation(booking_id)
+    return start_reservation(booking_id, current_user_id)
 
 
 def calculate_earliest_reservation_datetime(booking):
@@ -223,8 +253,8 @@ def check_if_reservation_possible_now(booking_id, current_datetime):
     return possible_now
 
 
-def start_reservation(booking_id):
-    new_reservation = Reservation(booking_id)
+def start_reservation(booking_id, current_user_id):
+    new_reservation = Reservation(booking_id, current_user_id)
     db.session.add(new_reservation)
     db.session.commit()
     app.logger.info(f"reservation with reservation_id {new_reservation.id} added for booking_id {booking_id}")
@@ -247,6 +277,7 @@ def start_reservation(booking_id):
 
     if booking.confirmation_code is not None:
         new_reservation.status = "CONFIRMED"
+        db.session.commit()
         app.logger.info(f"reservation for booking_id {booking_id} confirmed")
 
     download_pdf(driver, booking_id)
@@ -254,11 +285,10 @@ def start_reservation(booking_id):
 
 
 def generate_datetime_selector(booking_id):
-    date_event = db.session.query(Booking.date_event).filter_by(id=booking_id).first()[0]
-    time_event = db.session.query(Booking.time_event).filter_by(id=booking_id).first()[0]
-    time_event_formatted = datetime.strptime(time_event, '%H:%M')
+    booking = db.session.query(Booking).filter_by(id=booking_id).first()
+    time_event_formatted = datetime.strptime(booking.time_event, '%H:%M')
     time_event_corrected = time_event_formatted - timedelta(hours=+1)
-    datetime_selector = f".event-time[data-time='{date_event}T{time_event_corrected.time()}+00:00']"
+    datetime_selector = f".event-time[data-time='{booking.date_event}T{time_event_corrected.time()}+00:00']"
 
     return datetime_selector
 
