@@ -183,7 +183,7 @@ def schedule_reservation(booking_id, current_datetime_str):
     return "scheduled reservation"
 
 
-@celery.task(name='app.schedule_reservation')
+# @celery.task(name='app.schedule_reservation')
 def create_reservation_schedule_task(booking_id, current_datetime_str):
     app.logger.info(f"starting task: reservation for booking_id {booking_id}")
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
