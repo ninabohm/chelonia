@@ -22,7 +22,7 @@ def load_user(user_id):
 def requires_not_logged_in(func):
     @wraps(func)
     def wrapped_func(*args, **kwargs):
-        if "_user_id" not in session:
+        if "first_name" not in session:
             return func(*args, **kwargs)
         return redirect(url_for('create_booking'))
     return wrapped_func
