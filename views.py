@@ -1,6 +1,7 @@
 from app import app, login_manager, celery
 import time
 import json
+import os
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -329,9 +330,9 @@ def start_ticket(booking_id, current_user_id):
     ticket = db.session.query(Ticket).join(Booking).filter_by(id=booking_id).first()
     app.logger.info(f"started ticket: id: {ticket.id}, booking_id: {booking_id}, user id: {current_user_id}")
 
-    ser = Service('./chromedriver')
     options = webdriver.ChromeOptions()
-    driver = webdriver.Chrome(service=ser, options=options)
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), options=options)
 
     try:
         choose_ticket_slot(driver, booking_id)
