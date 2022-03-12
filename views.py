@@ -85,13 +85,13 @@ def register():
 
 
 @app.route("/user/account", methods=['GET'])
-@requires_logged_in
+@login_required
 def account():
     return render_template("account.html", user_first_name=current_user.first_name)
 
 
 @app.route('/user')
-@requires_logged_in
+@login_required
 def get_users():
     users = db.session.query(User).all()
     data = []
@@ -133,7 +133,6 @@ def login():
 
 
 @app.route('/user/logout', methods=['GET', 'POST'])
-@requires_logged_in
 def logout():
     app.logger.info(f"logging out user {current_user.id}")
     logout_user()
@@ -142,7 +141,7 @@ def logout():
 
 
 @app.route('/venue/create', methods=['GET', 'POST'])
-@requires_logged_in
+@login_required
 def create_venue():
     form = VenueForm()
     if request.method == 'POST':
@@ -157,7 +156,7 @@ def create_venue():
 
 
 @app.route('/venue', methods=['GET'])
-@requires_logged_in
+@login_required
 def get_venues():
     venues = db.session.query(Venue).all()
     data = []
@@ -182,7 +181,7 @@ def get_venues():
 
 
 @app.route('/booking')
-@requires_logged_in
+@login_required
 def get_bookings():
     bookings = db.session.query(Booking).all()
     data = []
@@ -210,7 +209,7 @@ def get_bookings():
 
 
 @app.route('/booking/create', methods=['GET', 'POST'])
-@requires_logged_in
+@login_required
 def create_booking():
     available_venues = db.session.query(Venue).all()
     venue_choices = [(item.id, item.venue_name) for item in available_venues]
@@ -233,7 +232,7 @@ def create_booking():
 
 
 @app.route('/booking/<booking_id>')
-@requires_logged_in
+@login_required
 def get_booking_by_id(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     data = [
@@ -260,7 +259,7 @@ def get_booking_by_id(booking_id):
 
 
 @app.route('/ticket')
-@requires_logged_in
+@login_required
 def get_tickets():
     tickets = []
     for item in db.session.query(Ticket).all():
@@ -269,7 +268,7 @@ def get_tickets():
 
 
 @app.route('/ticket/<booking_id>', methods=['GET', 'POST'])
-@requires_logged_in
+@login_required
 def create_ticket(booking_id):
     if request.method == 'POST':
         current_datetime = datetime.utcnow()
