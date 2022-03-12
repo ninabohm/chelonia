@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 
 @login_manager.user_loader
 def load_user(user_id):
+    app.logger.info(f"db: {db}")
     return User.query.get(user_id)
 
 def requires_logged_in(func):
