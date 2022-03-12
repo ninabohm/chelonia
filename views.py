@@ -41,6 +41,7 @@ def requires_logged_in(func):
 @app.route('/')
 @requires_logged_in
 def index():
+    app.logger.info(f"user: {current_user}")
     try:
         user_first_name = current_user.first_name
     except AttributeError:
