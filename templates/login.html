@@ -6,6 +6,7 @@
 
 {% block content %}
 <h1>Login</h1>
+<p> {{ message }} </p>
 <form class="login-form" id="login-form" action="/user/login" method="POST">
     <div class="form-group col-lg-4 mx-auto mt-2" id="email">
         {{ form.email.label }}

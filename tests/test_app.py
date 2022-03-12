@@ -16,7 +16,6 @@ class TestApp(unittest.TestCase):
         db.drop_all()
         self.client = app.test_client
         db.create_all()
-        self.booking = {}
 
     def test_given_app_running_index_endpoint_returns_200(self):
         response = self.client().get("/", follow_redirects=True)
@@ -28,8 +27,7 @@ class TestApp(unittest.TestCase):
         new_booking = Booking("4", date_event, time_event, "1")
         db.session.add(new_booking)
         db.session.commit()
-        booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
-        self.assertEqual(generate_datetime_selector(booking.id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
+        self.assertEqual(generate_datetime_selector(new_booking.id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
 
     def test_returns_confirmation_code_from_url(self):
         with app.app_context():
@@ -48,71 +46,55 @@ class TestApp(unittest.TestCase):
         new_booking = Booking("4", date_event, time_event, "1")
         db.session.add(new_booking)
         db.session.commit()
-        new_booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(new_booking)
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
         db.session.commit()
-        booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         current_datetime = datetime(2022, 3, 10, 8, 27, 7, 637999)
-        self.assertFalse(check_if_reservation_possible_now(booking.id, current_datetime))
+        self.assertFalse(check_if_ticket_possible_now(new_booking.id, current_datetime))
 
     def test_should_return_false_given_more_than_96_ahead_2(self):
         date_event = "2023-04-26"
         time_event = "20:00"
         new_booking = Booking("4", date_event, time_event, "1")
-        new_booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(new_booking)
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
         db.session.add(new_booking)
         db.session.commit()
-        new_booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(new_booking)
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
         db.session.commit()
-        booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         current_datetime = datetime(2022, 3, 10, 8, 27, 7, 637999)
-        self.assertFalse(check_if_reservation_possible_now(booking.id, current_datetime))
+        self.assertFalse(check_if_ticket_possible_now(new_booking.id, current_datetime))
 
 
     def test_should_return_true_given_less_than_96_ahead_2(self):
         date_event = "2022-03-10"
         time_event = "20:00"
         new_booking = Booking("4", date_event, time_event, "2")
-        new_booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(new_booking)
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
         db.session.add(new_booking)
         db.session.commit()
-        new_booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(new_booking)
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
         db.session.commit()
-        booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         current_datetime = datetime(2022, 3, 10, 14, 2, 13, 440752)
-        self.assertTrue(check_if_reservation_possible_now(booking.id, current_datetime))
+        self.assertTrue(check_if_ticket_possible_now(new_booking.id, current_datetime))
 
-    def test_given_booking_should_return_reservation_time(self):
+    def test_given_booking_should_return_ticket_time(self):
         date_event = "2022-03-15"
         time_event = "20:00"
         booking = Booking("4", date_event, time_event, "1")
         expected = datetime(2022, 3, 11, 20, 0)
-        earliest_time = calculate_earliest_reservation_datetime(booking)
+        earliest_time = calculate_earliest_ticket_datetime(booking)
         self.assertEqual(earliest_time, expected)
 
     def test_given_earliest_time_should_return_timedelta_in_seconds(self):
         current_datetime = datetime(2022, 3, 10, 10, 0)
-        earliest_reservation_datetime = datetime(2022, 3, 11, 10, 0)
+        earliest_ticket_datetime = datetime(2022, 3, 11, 10, 0)
         expected = 86400
-        self.assertEqual(calculate_timedelta_in_seconds(earliest_reservation_datetime, current_datetime), expected)
+        self.assertEqual(calculate_timedelta_in_seconds(earliest_ticket_datetime, current_datetime), expected)
 
     def test_given_earliest_time_should_return_timedelta_in_seconds_2(self):
         current_datetime = datetime(2022, 3, 10, 10, 0)
-        earliest_reservation_datetime = datetime(2022, 3, 10, 10, 2)
+        earliest_ticket_datetime = datetime(2022, 3, 10, 10, 2)
         expected = 120
-        self.assertEqual(calculate_timedelta_in_seconds(earliest_reservation_datetime, current_datetime), expected)
-
-    # def test_should_return_reservation(self):
-    #     date_event = "2022-03-15"
-    #     time_event = "13:00"
-    #     new_booking = Booking("4", date_event, time_event, "1")
-    #     db.session.add(new_booking)
-    #     db.session.commit()
-    #     new_booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(new_booking)
-    #     db.session.commit()
-    #     booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
-    #     current_datetime_str = "2022-03-10 13:00:00.000000"
-    #     actual = create_reservation_schedule_task(booking.id, current_datetime_str)
-    #     self.assertIsInstance(actual, Reservation)
+        self.assertEqual(calculate_timedelta_in_seconds(earliest_ticket_datetime, current_datetime), expected)
 
     def test_given_no_login_get_booking_returns_401(self):
         response = self.client().get("/booking", follow_redirects=True)
@@ -159,6 +141,40 @@ class TestApp(unittest.TestCase):
         booking = Booking(venue_db.id, "2022-03-11", "20:00", "1")
         db.session.add(booking)
         db.session.commit()
-        booking_db = db.session.query(Booking).order_by(Booking.id.desc()).first()
-        venue_url = db.session.query(Venue.venue_url).join(Booking).filter_by(id=booking_db.id).first()[0]
+        venue_url = db.session.query(Venue.venue_url).join(Booking).filter_by(id=booking.id).first()[0]
         self.assertEqual(venue_url, 'https://pretix.eu/Baeder/74/')
+
+    def test_should_return_booking_id(self):
+        date_event = "2022-03-16"
+        time_event = "20:00"
+        new_booking = Booking("4", date_event, time_event, "1")
+        db.session.add(new_booking)
+        db.session.commit()
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
+        db.session.commit()
+        self.assertEqual(new_booking.id, 1)
+
+    def test_should_return_ticket(self):
+        booking = Booking("1", "2022-03-12", "20:00", "1")
+        db.session.add(booking)
+        db.session.commit()
+        ticket = Ticket(booking.id, "3")
+        db.session.add(ticket)
+        db.session.commit()
+        ticket_db = db.session.query(Ticket).join(Booking).filter_by(id=booking.id).first()
+        self.assertEqual(ticket_db.id, ticket.id)
+
+    def test_should_return_ticket_confirmation_string(self):
+        date_event = "2022-03-16"
+        time_event = "20:00"
+        new_booking = Booking("4", date_event, time_event, "1")
+        db.session.add(new_booking)
+        db.session.commit()
+        new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
+        db.session.commit()
+        ticket = Ticket(new_booking.id, "1")
+        db.session.add(ticket)
+        db.session.commit()
+        current_datetime_str = "2022-03-12 13:00:00.000000"
+        actual = create_ticket_schedule_task(new_booking.id, current_datetime_str, "1")
+        self.assertEqual(actual, "scheduled ticket 2")

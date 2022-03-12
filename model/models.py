@@ -22,7 +22,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     authenticated = db.Column(db.Boolean, default=False)
     bookings = db.relationship("Booking", backref="user")
-    reservations = db.relationship("Reservation", backref="user")
+    tickets = db.relationship("Ticket", backref="user")
     venue_email = db.Column(db.String())
     venue_password = db.Column(db.String())
 
@@ -61,8 +61,8 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     confirmation_code = db.Column(db.String())
-    reservation = db.relationship("Reservation", backref="booking", uselist=False)
-    earliest_reservation_datetime = db.Column(db.DateTime())
+    ticket = db.relationship("Ticket", backref="booking", uselist=False)
+    earliest_ticket_datetime = db.Column(db.DateTime())
 
     def __init__(self, venue_id, date_event, time_event, user_id):
         self.venue_id = venue_id
@@ -71,9 +71,9 @@ class Booking(db.Model):
         self.user_id = user_id
 
 
-class Reservation(db.Model):
+class Ticket(db.Model):
 
-    __tablename__ = "reservation"
+    __tablename__ = "ticket"
 
     id = db.Column(db.Integer, primary_key=True)
     booking_id = db.Column(db.Integer(), db.ForeignKey("booking.id"))

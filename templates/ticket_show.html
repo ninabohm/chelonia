@@ -1,25 +1,25 @@
 {% extends "base.html" %}
-{% block title %} Show reservation {% endblock %}
+{% block title %} Show ticket {% endblock %}
 {% block head %}
 {{ super() }}
 {% endblock %}
 
 {% block content %}
-<h1>Show reservation</h1>
-<p>Successfully added a reservation</p>
+<h1>Show ticket</h1>
+<p>Successfully added a ticket</p>
 <div class="container d-flex justify-content-center">
     <table class="table table-responsive" style="text-align: center">
         <tr>
-            <th>Reservation id</th>
+            <th>Ticket id</th>
             <th>Booking id</th>
             <th>Created at</th>
             <th>Status</th>
         </tr>
         <tr>
-            <td>{{ reservation.id }}</td>
-            <td>{{ reservation.booking_id }}</td>
-            <td>{{ reservation.created_at }}</td>
-            <td>{{ reservation.status }}</td>
+            <td>{{ ticket.id }}</td>
+            <td>{{ ticket.booking_id }}</td>
+            <td>{{ ticket.created_at }}</td>
+            <td>{{ ticket.status }}</td>
         </tr>
     </table>
 </div>

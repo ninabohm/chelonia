@@ -9,8 +9,10 @@ class TestBooking(unittest.TestCase):
 
     def setUp(self):
         app.config.from_object("config.TestingConfig")
+        print(app.config)
         db.session.close()
         db.drop_all()
+        self.client = app.test_client
         db.create_all()
 
     def test_should_return_first_name(self):
@@ -54,7 +56,7 @@ class TestBooking(unittest.TestCase):
         booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
         self.assertEqual(booking.user_id, user.id)
 
-    def test_given_reservation_return_booking_id(self):
+    def test_given_ticket_return_booking_id(self):
         with app.app_context():
             with app.test_client() as client:
                 client.get('/')
@@ -70,7 +72,7 @@ class TestBooking(unittest.TestCase):
                 db.session.add(new_booking)
                 db.session.commit()
                 booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
-                reservation = Reservation(booking.id, current_user.id)
-                db.session.add(reservation)
+                ticket = Ticket(booking.id, current_user.id)
+                db.session.add(ticket)
                 db.session.commit()
-                self.assertEqual(reservation.booking_id, booking.id)
+                self.assertEqual(ticket.booking_id, booking.id)

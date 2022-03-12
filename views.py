@@ -6,11 +6,11 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
 from flask import Flask, g, render_template, request, redirect, flash, url_for, session, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from sqlalchemy.exc import IntegrityError
-from model.models import db, Booking, User, Venue, Reservation
+from model.models import db, Booking, User, Venue, Ticket
 from forms.forms import RegistrationForm, LoginForm, VenueForm, BookingForm
 from datetime import datetime, timedelta
 
@@ -83,7 +83,8 @@ def login():
         if user is not None and user.check_password(password):
             login_user(user)
             return redirect(url_for('index'))
-        flash('Invalid email or password')
+        message = "Password and email do not match or user does not exist"
+        return render_template("login.html", form=form,  message=message)
     return render_template("login.html", form=form)
 
 
@@ -149,7 +150,7 @@ def get_bookings():
             'user_id': booking.user_id,
             'created_at': booking.created_at,
             'confirmation_code': booking.confirmation_code,
-            'reservation': booking.reservation
+            'ticket': booking.ticket
         }
         data.append(obj)
     response = app.response_class(
@@ -177,10 +178,11 @@ def create_booking():
         booking = Booking(venue_id, date_event, time_event, current_user.id)
         db.session.add(booking)
         db.session.commit()
-        booking.earliest_reservation_datetime = calculate_earliest_reservation_datetime(booking)
+        app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}")
+        booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
         db.session.commit()
-        app.logger.info(f"added booking at venue {booking.venue_id} with id {booking.id}")
-        create_reservation(booking.id)
+        app.logger.info(f"added earliest_ticket_datetime: booking_id {booking.id}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
+        create_ticket(booking.id)
         return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
 
@@ -198,7 +200,7 @@ def get_booking_by_id(booking_id):
             'user_id': booking.user_id,
             'created_at': booking.created_at,
             'confirmation_code': booking.confirmation_code,
-            'reservation_status': booking.reservation
+            'ticket_status': booking.ticket
         }
     ]
     response = app.response_class(
@@ -212,98 +214,106 @@ def get_booking_by_id(booking_id):
     return render_template("booking_show.html", booking=booking)
 
 
-@app.route('/reservation')
+@app.route('/ticket')
 @login_required
-def get_reservations():
-    reservations = []
-    for item in db.session.query(Reservation).all():
-        reservations.append(item)
-    return render_template("reservations.html", reservations=reservations)
+def get_tickets():
+    tickets = []
+    for item in db.session.query(Ticket).all():
+        tickets.append(item)
+    return render_template("tickets.html", tickets=tickets)
 
 
-@app.route('/reservation/<booking_id>', methods=['GET', 'POST'])
+@app.route('/ticket/<booking_id>', methods=['GET', 'POST'])
 @login_required
-def create_reservation(booking_id):
+def create_ticket(booking_id):
     if request.method == 'POST':
         current_datetime = datetime.utcnow()
-        if check_if_reservation_possible_now(booking_id, current_datetime):
-            return start_reservation(booking_id, current_user.id)
+        ticket = Ticket(booking_id, current_user.id)
+        db.session.add(ticket)
+        db.session.commit()
+
+        if check_if_ticket_possible_now(booking_id, current_datetime):
+            start_ticket(booking_id, current_user.id)
+            return render_template("ticket_show.html", ticket=ticket)
         current_datetime_str = str(current_datetime)
-        schedule_reservation(booking_id, current_datetime_str, current_user.id)
-        return"scheduled reservation for you"
+        schedule_ticket(booking_id, current_datetime_str, current_user.id)
+
+        booking = db.session.query(Booking).filter_by(id=booking_id)
+        return render_template("ticket_scheduled.html", ticket=ticket, booking=booking)
 
 
-def schedule_reservation(booking_id, current_datetime_str, current_user_id):
-    create_reservation_schedule_task.delay(booking_id, current_datetime_str, current_user_id)
-    return "scheduled reservation"
+def schedule_ticket(booking_id, current_datetime_str, current_user_id):
+    create_ticket_schedule_task.delay(booking_id, current_datetime_str, current_user_id)
+    return "scheduled ticket"
 
 
-@celery.task(name='app.schedule_reservation')
-def create_reservation_schedule_task(booking_id, current_datetime_str, current_user_id):
-    app.logger.info(f"starting task: reservation for booking_id {booking_id}")
-    booking = db.session.query(Booking).filter_by(id=booking_id).first()
+@celery.task(name='app.schedule_ticket')
+def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_id):
+    app.logger.info(f"task: ticket for booking_id {booking_id}")
     current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
-    app.logger.info(f"reservation for booking_id {booking_id} will start on {booking.earliest_reservation_datetime}")
-    sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_reservation_datetime, current_datetime)
-    app.logger.info(f"waiting for {sleep_seconds} seconds to start reservation")
-    time.sleep(sleep_seconds)
-    app.logger.info(f"task executed: reservation for booking_id {booking.id}")
-    return start_reservation(booking_id, current_user_id)
+    booking = db.session.query(Booking).filter_by(id=booking_id).first()
+    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
+    sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
+    #time.sleep(sleep_seconds)
+    time.sleep(10)
+    # app.logger.info(f"task executed: ticket for booking_id: {booking.id}")
+    start_ticket(booking_id, current_user_id)
+    return "scheduled ticket 2"
 
 
-def calculate_earliest_reservation_datetime(booking):
+def calculate_earliest_ticket_datetime(booking):
     booking_datetime_str = booking.date_event + "T" + booking.time_event
     booking_datetime = datetime.strptime(booking_datetime_str, '%Y-%m-%dT%H:%M')
     return booking_datetime - timedelta(hours=96)
 
 
-def calculate_timedelta_in_seconds(earliest_reservation_time, current_datetime):
-    delta = earliest_reservation_time - current_datetime
+def calculate_timedelta_in_seconds(earliest_ticket_time, current_datetime):
+    delta = earliest_ticket_time - current_datetime
     return delta.total_seconds()
 
 
-def check_if_reservation_possible_now(booking_id, current_datetime):
+def check_if_ticket_possible_now(booking_id, current_datetime):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    possible_now = booking.earliest_reservation_datetime <= current_datetime
+    possible_now = booking.earliest_ticket_datetime <= current_datetime
     if possible_now:
-        app.logger.info(f"reservation for booking_id {booking.id} possible now")
-    app.logger.info(f"reservation for booking_id {booking.id} not possible yet. waiting...")
+        app.logger.info(f"ticket for booking_id: {booking.id} possible now")
+    app.logger.info(f"ticket for booking_id: {booking.id} not possible yet. scheduling for later...")
     return possible_now
 
 
-def start_reservation(booking_id, current_user_id):
-    new_reservation = Reservation(booking_id, current_user_id)
-    db.session.add(new_reservation)
-    db.session.commit()
-    app.logger.info(f"started reservation with id {new_reservation.id} for booking_id {booking_id}")
-
+def start_ticket(booking_id, current_user_id):
+    ticket = db.session.query(Ticket).join(Booking).filter_by(id=booking_id).first()
+    app.logger.info(f"started ticket: id: {ticket.id}, booking_id: {booking_id}, user id: {current_user_id}")
 
     ser = Service('./chromedriver')
     options = webdriver.ChromeOptions()
     driver = webdriver.Chrome(service=ser, options=options)
 
-    choose_ticket(driver, booking_id)
-    apply_voucher(driver)
-    complete_checkout(driver, booking_id)
-
+    try:
+        choose_ticket_slot(driver, booking_id)
+        apply_voucher(driver)
+        complete_checkout(driver, booking_id)
+    except WebDriverException:
+        app.logger.info(NoSuchElementException)
+        message = "Sorry, something went wrong"
+        return render_template('message.html', message=message)
+    
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
 
     if booking.confirmation_code is not None:
-        new_reservation.status = "CONFIRMED"
+        ticket.status = "CONFIRMED"
         db.session.commit()
-        app.logger.info(f"reservation for booking_id {booking_id} confirmed")
+        app.logger.info(f"ticket for booking_id {booking_id} confirmed")
     try:
         download_pdf(driver, booking_id)
     except NoSuchElementException:
         app.logger.info(NoSuchElementException)
         message = "Sorry, something went wrong"
         return render_template('message.html', message=message)
-    return new_reservation
 
 
-
-def choose_ticket(driver, booking_id):
+def choose_ticket_slot(driver, booking_id):
     booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
     datetime_selector = generate_datetime_selector(booking_id)
     driver.get(booking_venue.venue_url)

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %} Scheduled a ticket-task {% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<h1>Show ticket</h1>
+<p>Scheduled a ticket-task</p>
+<p>Start ticket scheduled for {{ booking.earliest_ticket_time }} </p>
+<div class="container d-flex justify-content-center">
+    <table class="table table-responsive" style="text-align: center">
+        <tr>
+            <th>Ticket id</th>
+            <th>Booking id</th>
+            <th>Created at</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>{{ ticket.id }}</td>
+            <td>{{ ticket.booking_id }}</td>
+            <td>{{ ticket.created_at }}</td>
+            <td>{{ ticket.status }}</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}
