@@ -290,7 +290,7 @@ def create_ticket(booking_id):
 
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):
     create_ticket_schedule_task.delay(booking_id, current_datetime_str, current_user_id)
-    return "scheduled ticket"
+    return "successfully scheduled ticket"
 
 
 @celery.task(name='app.schedule_ticket')
@@ -303,7 +303,7 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
     time.sleep(sleep_seconds)
     app.logger.info(f"task executed: ticket for booking_id: {booking.id}")
     start_ticket(booking_id, current_user_id)
-    return "scheduled ticket 2"
+    return "scheduled ticket"
 
 
 def calculate_earliest_ticket_datetime(booking):
@@ -346,7 +346,7 @@ def start_ticket(booking_id, current_user_id):
         complete_checkout(driver, booking_id)
         app.logger.info("checkout completed")
     except WebDriverException:
-        app.logger.info(NoSuchElementException)
+        app.logger.info(WebDriverException)
         message = "Sorry, something went wrong"
         return render_template('message.html', message=message)
     
