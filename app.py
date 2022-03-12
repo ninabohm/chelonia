@@ -9,7 +9,6 @@ if app.config["ENV"] == "production":
     app.config.from_object("config.ProductionConfig")
 else:
     app.config.from_object("config.DevelopmentConfig")
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/2'
 app.logger.setLevel(logging.INFO)
 
 celery = make_celery(app)
