@@ -23,7 +23,7 @@ def requires_logged_in(func):
   @wraps(func)
   def wrapped_func(*args, **kwargs):
       form = LoginForm()
-      if session["_user_id"] is not "1":
+      if "first_name" in session:
           return func(*args, **kwargs)
       return redirect(url_for('login'))
   return wrapped_func
@@ -32,9 +32,9 @@ def requires_logged_in(func):
 def requires_not_logged_in(func):
     @wraps(func)
     def wrapped_func(*args, **kwargs):
-        if session["_user_id"] is "1":
+        if "first_name" not in session:
             return func(*args, **kwargs)
-        return redirect(url_for('index'))
+        return redirect(url_for('create_booking'))
     return wrapped_func
 
 
