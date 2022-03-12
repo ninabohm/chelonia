@@ -10,6 +10,7 @@ if app.config["ENV"] == "production":
 else:
     app.config.from_object("config.DevelopmentConfig")
 app.logger.setLevel(logging.INFO)
+app.config["SESSION_PERMANENT"] = True
 
 celery = make_celery(app)
 
