@@ -40,7 +40,6 @@ def requires_not_logged_in(func):
 
 @app.route('/')
 def index():
-    app.logger.info(f"user: {current_user}")
     app.logger.info(f"session: {session}")
     try:
         user_first_name = current_user.first_name
@@ -107,6 +106,7 @@ def get_users():
 @app.route('/user/login', methods=['GET', 'POST'])
 @requires_not_logged_in
 def login():
+    app.logger.info(f"session: {session}")
     form = LoginForm()
     if request.method == 'POST':
         email = request.form.get("email")
