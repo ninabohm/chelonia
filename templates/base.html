@@ -17,9 +17,7 @@
 </head>
 <body>
     {% block nav %}
-        {% with user = current_user %}
             {% include "header.html" %}
-        {% endwith %}
     {% endblock %}
     <div id="content" class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center">
         {% block content %} {% endblock %}

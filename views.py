@@ -19,13 +19,25 @@ from datetime import datetime, timedelta
 def load_user(user_id):
     return User.query.get(user_id)
 
+def requires_not_logged_in(func):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if "_user_id" not in session:
+            return func(*args, **kwargs)
+        return redirect("/booking/create")
+    return wrapped_func
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    try:
+        user_first_name = current_user.first_name
+    except AttributeError:
+        user_first_name = ""
+    return render_template("index.html", user_first_name=user_first_name)
 
 
 @app.route('/user/register', methods=['GET', 'POST'])
+@requires_not_logged_in
 def register():
     form = RegistrationForm()
     if request.method == 'POST':
@@ -46,6 +58,12 @@ def register():
             message = "An account with this email already exists. Please try again"
             return render_template("register.html", form=form, error=message)
     return render_template("register.html", form=form)
+
+
+@app.route("/user/account", methods=['GET'])
+@login_required
+def account():
+    return render_template("account.html", user_first_name=current_user.first_name)
 
 
 @app.route('/user')
@@ -74,6 +92,7 @@ def get_users():
 
 
 @app.route('/user/login', methods=['GET', 'POST'])
+@requires_not_logged_in
 def login():
     form = LoginForm()
     if request.method == 'POST':

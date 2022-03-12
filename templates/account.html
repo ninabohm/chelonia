@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %} Account {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+
+{% block content %}
+<h1>Account</h1>
+<p>Hello {{ user_first_name }} </p>
+<div>
+    <img src="/static/chelonia-turtle.svg" alt="chelonia-turtle">
+</div>
+<div>
+    <button class="btn btn-primary mt-4" type="submit" onclick="window.location.href='/user/logout'">Log out</button>
+</div>
+{% endblock %}
