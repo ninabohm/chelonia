@@ -41,6 +41,7 @@ def requires_not_logged_in(func):
 @app.route('/')
 def index():
     app.logger.info(f"user: {current_user}")
+    app.logger.info(f"session: {session}")
     try:
         user_first_name = current_user.first_name
     except AttributeError:

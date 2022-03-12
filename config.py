@@ -1,11 +1,14 @@
 import os
-
+import redis
 
 class Config(object):
     DEBUG = False
     TESTING = False
     CSRF_ENABLED = True
-    SECRET_KEY = os.environ['SECRET_KEY']
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SESSION_REDIS = redis.from_url(os.environ.get('REDIS_URL'))
+    SESSION_TYPE = os.environ.get('SESSION_TYPE')
+    FLASK_ENV = os.environ.get('FLASK_ENV')
 
 
 class ProductionConfig(Config):
