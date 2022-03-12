@@ -15,7 +15,7 @@ class ProductionConfig(Config):
 class DevelopmentConfig(Config):
     DEBUG = True
     DEVELOPMENT = True
-    SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
+    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     DATADOG_ENV = os.environ['DATADOG_ENV']
     CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
     SQLALCHEMY_TRACK_MODIFICATIONS = False
