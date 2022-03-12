@@ -330,10 +330,13 @@ def start_ticket(booking_id, current_user_id):
     ticket = db.session.query(Ticket).join(Booking).filter_by(id=booking_id).first()
     app.logger.info(f"started ticket: id: {ticket.id}, booking_id: {booking_id}, user id: {current_user_id}")
 
-    options = webdriver.ChromeOptions()
-    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), options=options)
-    app.logger.inf(f"initialized chrome driver")
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    chrome_options.add_arguments("--headless")
+    chrome_options.add_arguments("--disable-dev-shm-usage")
+    chrome_options.add_arguments("--no-sandbox")
+    driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
+    app.logger.info(f"initialized chrome driver")
 
     try:
         choose_ticket_slot(driver, booking_id)
