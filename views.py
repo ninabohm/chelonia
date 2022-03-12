@@ -125,6 +125,7 @@ def login():
 def logout():
     app.logger.info(f"logging out user {current_user.id}")
     logout_user()
+    session.clear()
     return redirect(url_for('login'))
 
 
