@@ -46,8 +46,6 @@ pycparser==2.21
 PyGetWindow==0.0.9
 PyJWT==2.3.0
 PyMsgBox==1.0.9
-pyobjc==8.3
-pyobjc-core==8.3
 pyOpenSSL==22.0.0
 pyparsing==3.0.7
 pyperclip==1.8.2
