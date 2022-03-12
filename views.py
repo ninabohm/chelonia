@@ -337,8 +337,11 @@ def start_ticket(booking_id, current_user_id):
 
     try:
         choose_ticket_slot(driver, booking_id)
+        app.logger.info("ticket slot chosen")
         apply_voucher(driver)
+        app.logger.info("voucher applied")
         complete_checkout(driver, booking_id)
+        app.logger.info("checkout completed")
     except WebDriverException:
         app.logger.info(NoSuchElementException)
         message = "Sorry, something went wrong"
