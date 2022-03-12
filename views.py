@@ -28,6 +28,7 @@ def requires_not_logged_in(func):
     return wrapped_func
 
 @app.route('/')
+@login_required
 def index():
     try:
         user_first_name = current_user.first_name
