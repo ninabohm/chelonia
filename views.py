@@ -333,6 +333,7 @@ def start_ticket(booking_id, current_user_id):
     options = webdriver.ChromeOptions()
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), options=options)
+    app.logger.inf(f"initialized chrome driver")
 
     try:
         choose_ticket_slot(driver, booking_id)
