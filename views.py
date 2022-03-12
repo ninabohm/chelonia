@@ -39,7 +39,6 @@ def requires_not_logged_in(func):
 
 
 @app.route('/')
-@requires_logged_in
 def index():
     app.logger.info(f"user: {current_user}")
     try:
