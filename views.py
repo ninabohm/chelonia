@@ -19,6 +19,16 @@ from datetime import datetime, timedelta
 def load_user(user_id):
     return User.query.get(user_id)
 
+def requires_logged_in(func):
+  @wraps(func)
+  def wrapped_func(*args, **kwargs):
+      form = LoginForm()
+      if "first_name" in session:
+          return func(*args, **kwargs)
+      return redirect(url_for('login'))
+  return wrapped_func
+
+
 def requires_not_logged_in(func):
     @wraps(func)
     def wrapped_func(*args, **kwargs):
@@ -26,16 +36,6 @@ def requires_not_logged_in(func):
             return func(*args, **kwargs)
         return redirect(url_for('create_booking'))
     return wrapped_func
-
-
-def requires_logged_in(func):
-  @wraps(func)
-  def wrapped_func(*args, **kwargs):
-      form = LoginForm()
-      if "_user_id" in session:
-          return func(*args, **kwargs)
-      return redirect(url_for('login'))
-  return wrapped_func
 
 
 @app.route('/')
