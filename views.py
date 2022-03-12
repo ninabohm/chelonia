@@ -48,6 +48,18 @@ def index():
     return render_template("index.html", user_first_name=user_first_name)
 
 
+@app.route('/protected')
+@login_required
+def protected():
+    return "protected route"
+
+
+@app.route('/protected-2')
+@requires_logged_in
+def protected2():
+    return "protected route 2"
+
+
 @app.route('/user/register', methods=['GET', 'POST'])
 @requires_not_logged_in
 def register():
