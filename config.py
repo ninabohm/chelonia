@@ -14,8 +14,7 @@ class Config(object):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-    CELERY_RESULT_BACKEND = os.environ['CELERY_RESULT_BACKEND']
+    SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
 
 class DevelopmentConfig(Config):
     DEBUG = True
