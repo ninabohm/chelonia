@@ -341,7 +341,7 @@ def start_ticket(booking_id, current_user_id):
         apply_voucher(driver)
         app.logger.info("voucher applied")
         complete_checkout(driver, booking_id)
-        app.logger.info("checkout completed")
+        app.logger.info("checkout completed ")
     except WebDriverException:
         app.logger.info(NoSuchElementException)
         message = "Sorry, something went wrong"
