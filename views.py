@@ -20,6 +20,15 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
+def requires_logged_in(func):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if '_user_id' not in session:
+            return redirect(url_for('login'))
+        return func(*args, **kwargs)
+    return wrapped_func
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -49,7 +58,7 @@ def register():
 
 
 @app.route('/user')
-@login_required
+@requires_logged_in
 def get_users():
     users = db.session.query(User).all()
     data = []
