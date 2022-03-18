@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 
 @login_manager.user_loader
 def load_user(user_id):
-    app.logger.info(f"db: {db}")
     return User.query.get(user_id)
 
 def requires_logged_in(func):
@@ -295,16 +294,14 @@ def schedule_ticket(booking_id, current_datetime_str, current_user_id):
 
 @celery.task(name='app.schedule_ticket')
 def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_id):
-    app.logger.info(f"task: ticket for booking_id {booking_id}")
+    app.logger.info(f"creating task: ticket for booking_id {booking_id}")
     current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     # time.sleep(sleep_seconds)
     time.sleep(10)
-    app.logger.info(f"task executed: ticket for booking_id: {booking.id}")
     start_ticket(booking_id, current_user_id)
-    return "scheduled ticket"
 
 
 def calculate_earliest_ticket_datetime(booking):
@@ -348,22 +345,20 @@ def start_ticket(booking_id, current_user_id):
         app.logger.info("checkout completed")
     except WebDriverException:
         app.logger.info(WebDriverException)
-        message = "Sorry, something went wrong"
-        return render_template('message.html', message=message)
-    
+        return
+    except NoSuchElementException:
+        app.logger.info(NoSuchElementException)
+        return
+
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
 
-    if booking.confirmation_code is not None:
+    if booking.confirmation_code is not None and is not "re_co":
         ticket.status = "CONFIRMED"
         db.session.commit()
-        app.logger.info(f"ticket for booking_id {booking_id} confirmed")
-    try:
         download_pdf(driver, booking_id)
-    except NoSuchElementException:
-        app.logger.info(NoSuchElementException)
-        message = "Sorry, something went wrong"
-        return render_template('message.html', message=message)
+        return
+    app.logger.info("An error occurred")
 
 
 def choose_ticket_slot(driver, booking_id):
@@ -400,27 +395,21 @@ def apply_voucher(driver):
 
 def complete_checkout(driver, booking_id):
     venue_url = db.session.query(Venue.venue_url).join(Booking).filter_by(id=booking_id).first()[0]
-    try:
-        checkout_url = f"{venue_url}checkout/customer/"
-        driver.get(checkout_url)
+    checkout_url = f"{venue_url}checkout/customer/"
+    driver.get(checkout_url)
 
-        login_radio = driver.find_element(By.ID, "input_customer_login")
-        login_radio.click()
-        time.sleep(2)
+    login_radio = driver.find_element(By.ID, "input_customer_login")
+    login_radio.click()
+    time.sleep(2)
 
-        website_login(driver)
+    website_login(driver)
 
-        confirmation_checkbox = driver.find_element(By.ID, "input_confirm_confirm_text_0")
-        confirmation_checkbox.click()
-        confirmation_checkbox.send_keys(Keys.TAB)
-        confirmation_checkbox.send_keys(Keys.ENTER)
-        app.logger.info("checkout completed")
-        time.sleep(2)
-
-    except NoSuchElementException:
-        app.logger.info(NoSuchElementException)
-        message = "Sorry, something went wrong"
-        return render_template('message.html', message=message)
+    confirmation_checkbox = driver.find_element(By.ID, "input_confirm_confirm_text_0")
+    confirmation_checkbox.click()
+    confirmation_checkbox.send_keys(Keys.TAB)
+    confirmation_checkbox.send_keys(Keys.ENTER)
+    app.logger.info("checkout completed")
+    time.sleep(2)
 
 
 def website_login(driver):
