@@ -330,6 +330,7 @@ def start_ticket(booking_id, current_user_id):
 
     chrome_options = webdriver.ChromeOptions()
     chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    # TODO: save headless as env var for local debugging
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
@@ -338,11 +339,8 @@ def start_ticket(booking_id, current_user_id):
 
     try:
         choose_ticket_slot(driver, booking_id)
-        app.logger.info("ticket slot chosen")
         apply_voucher(driver)
-        app.logger.info("voucher applied")
         complete_checkout(driver, booking_id)
-        app.logger.info("checkout completed")
     except WebDriverException:
         app.logger.info(WebDriverException)
         return
@@ -367,6 +365,7 @@ def choose_ticket_slot(driver, booking_id):
     driver.get(booking_venue.venue_url)
     date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
     date_field.click()
+    app.logger.info("ticket slot chosen")
     time.sleep(2)
 
 
