@@ -339,8 +339,11 @@ def start_ticket(booking_id, current_user_id):
 
     try:
         choose_ticket_slot(driver, booking_id)
+        if 'presale' in driver.page_source:
+            return
         apply_voucher(driver)
         complete_checkout(driver, booking_id)
+
     except WebDriverException:
         app.logger.info(WebDriverException)
         return
