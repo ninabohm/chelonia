@@ -300,7 +300,8 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
-    time.sleep(sleep_seconds)
+    # time.sleep(sleep_seconds)
+    time.sleep(10)
     app.logger.info(f"task executed: ticket for booking_id: {booking.id}")
     start_ticket(booking_id, current_user_id)
     return "scheduled ticket"
