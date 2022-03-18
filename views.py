@@ -353,7 +353,7 @@ def start_ticket(booking_id, current_user_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
 
-    if booking.confirmation_code is not None and is not "re_co":
+    if booking.confirmation_code is not None and not "re_co":
         ticket.status = "CONFIRMED"
         db.session.commit()
         download_pdf(driver, booking_id)
