@@ -337,19 +337,11 @@ def start_ticket(booking_id, current_user_id):
     driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
     app.logger.info(f"initialized chrome driver")
 
-    try:
-        choose_ticket_slot(driver, booking_id)
-        if 'presale' in driver.page_source:
-            return
-        apply_voucher(driver)
-        complete_checkout(driver, booking_id)
-
-    except WebDriverException:
-        app.logger.info(WebDriverException)
+    choose_ticket_slot(driver, booking_id)
+    if 'presale' in driver.page_source:
         return
-    except NoSuchElementException:
-        app.logger.info(NoSuchElementException)
-        return
+    apply_voucher(driver)
+    complete_checkout(driver, booking_id)
 
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
@@ -358,8 +350,6 @@ def start_ticket(booking_id, current_user_id):
         ticket.status = "CONFIRMED"
         db.session.commit()
         download_pdf(driver, booking_id)
-        return
-    app.logger.info("An error occurred")
 
 
 def choose_ticket_slot(driver, booking_id):
