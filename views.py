@@ -41,7 +41,6 @@ def requires_not_logged_in(func):
 
 @app.route('/')
 def index():
-    app.logger.info(f"session: {session}")
     try:
         user_first_name = current_user.first_name
     except AttributeError:
@@ -299,8 +298,8 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
-    time.sleep(sleep_seconds)
-    #time.sleep(10)
+    #time.sleep(sleep_seconds)
+    time.sleep(20)
     start_ticket(booking_id, current_user_id)
 
 
