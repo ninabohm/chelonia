@@ -2,6 +2,7 @@ from app import app, login_manager, celery
 import time
 import json
 import os
+import pytz
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -225,7 +226,7 @@ def create_booking():
         app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}")
         booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
         db.session.commit()
-        app.logger.info(f"added earliest_ticket_datetime: booking_id {booking.id}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
+        app.logger.info(f"added earliest_ticket_datetime: {booking.earliest_ticket_datetime} for booking_id {booking.id}")
         create_ticket(booking.id)
         return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
@@ -306,7 +307,10 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
 def calculate_earliest_ticket_datetime(booking):
     booking_datetime_str = booking.date_event + "T" + booking.time_event
     booking_datetime = datetime.strptime(booking_datetime_str, '%Y-%m-%dT%H:%M')
-    return booking_datetime - timedelta(hours=96)
+    app.logger.info(f"booking_datetime local: {booking_datetime}")
+    booking_datetime_utc = booking_datetime.astimezone(pytz.UTC)
+    app.logger.info(f"booking_datetime utc: {booking_datetime_utc}")
+    return booking_datetime_utc - timedelta(hours=96)
 
 
 def calculate_timedelta_in_seconds(earliest_ticket_time, current_datetime):
