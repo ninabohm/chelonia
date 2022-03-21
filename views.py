@@ -119,7 +119,6 @@ def get_users():
 @app.route('/user/login', methods=['GET', 'POST'])
 @requires_not_logged_in
 def login():
-    app.logger.info(f"session: {session}")
     form = LoginForm()
     if request.method == 'POST':
         email = request.form.get("email")
@@ -217,15 +216,16 @@ def create_booking():
     form.venue_id.choices = venue_choices
     if request.method == 'POST':
         venue_id = request.form.get("venue_id")
-        datetime_event = request.form.get("datetime_event").astimezone(pytz.UTC)
+        date_event = request.form.get("date_event")
+        time_event = request.form.get("time_event")
+        datetime_event = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M").astimezone(pytz.UTC)
         booking = Booking(venue_id, datetime_event, current_user.id)
         booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
-        app.logger.info(f"earliest_ticket_datetime for booking_id {booking.id}: {booking.earliest_ticket_datetime}")
         db.session.add(booking)
         db.session.commit()
-        app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}")
+        app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event} UTC, earliest_ticket_datetime: {booking.earliest_ticket_datetime} UTC")
         create_ticket(booking.id)
-        return render_template("booking_show.html", booking=booking)
+        return render_template("booking_show.html", booking=booking, booking_datetime_event=datetime_event.astimezone(pytz.CET))
     return render_template("create_booking.html", form=form)
 
 
@@ -295,7 +295,7 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
     current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     # add tz to this log down here:
-    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
+    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime} UTC")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     time.sleep(sleep_seconds)
     #time.sleep(20)
@@ -303,7 +303,8 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
 
 
 def calculate_earliest_ticket_datetime(booking):
-    return booking.datetime_event - timedelta(hours=96)
+    local = booking.datetime_event - timedelta(hours=96)
+    return local.astimezone(pytz.UTC)
 
 
 def calculate_timedelta_in_seconds(earliest_ticket_time, current_datetime):
@@ -361,9 +362,7 @@ def choose_ticket_slot(driver, booking_id):
 
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    #should be utc already
-    time_event_corrected = booking.datetime_event - timedelta(hours=+1)
-    datetime_selector = f".event-time[data-time='{booking.datetime_event.date()}T{time_event_corrected.time()}+00:00']"
+    datetime_selector = f".event-time[data-time='{booking.datetime_event.date()}T{booking.datetime_event.time()}+00:00']"
 
     return datetime_selector
 

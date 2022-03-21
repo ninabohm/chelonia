@@ -17,12 +17,12 @@ class TestApp(unittest.TestCase):
         self.client = app.test_client
         db.create_all()
 
-#     def test_given_app_running_index_endpoint_returns_200(self):
-#         response = self.client().get("/", follow_redirects=True)
-#         self.assertEqual(response.status_code, 200)
+    def test_given_app_running_index_endpoint_returns_200(self):
+        response = self.client().get("/", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
 
     def test_returns_correct_datetime_selector(self):
-        datetime_event = datetime(2022, 3, 7, 20, 15)
+        datetime_event = datetime(2022, 3, 7, 19, 15).replace(tzinfo=pytz.UTC)
         new_booking = Booking("4", datetime_event, "1")
         db.session.add(new_booking)
         db.session.commit()
@@ -73,11 +73,10 @@ class TestApp(unittest.TestCase):
         self.assertTrue(check_if_ticket_possible_now(new_booking.id, current_datetime))
 
     def test_given_booking_should_return_ticket_time(self):
-        datetime_event = datetime(2022, 3, 15, 20, 0)
+        datetime_event = datetime(2022, 3, 15, 20, 0).astimezone(pytz.UTC)
         booking = Booking("4", datetime_event, "1")
-        expected = datetime(2022, 3, 11, 20, 0)
-        earliest_time = calculate_earliest_ticket_datetime(booking)
-        self.assertEqual(earliest_time, expected)
+        expected = datetime(2022, 3, 11, 20, 0).astimezone(pytz.UTC)
+        self.assertEqual(calculate_earliest_ticket_datetime(booking), expected)
 
     def test_given_earliest_time_should_return_timedelta_in_seconds(self):
         current_datetime = datetime(2022, 3, 10, 10, 0)
@@ -103,9 +102,9 @@ class TestApp(unittest.TestCase):
 #         response = self.client().get("/venue", follow_redirects=True)
 #         self.assertEqual(response.status_code, 401)
 
-#     def test_post_user_login(self):
-#         response = self.client().post('/user/login')
-#         self.assertEqual(response.status_code, 200)
+    def test_post_user_login(self):
+        response = self.client().post('/user/login')
+        self.assertEqual(response.status_code, 200)
 
     @mock.patch('flask_login.utils._get_user')
     def test_given_login_get_booking_returns_200(self, current_user):
