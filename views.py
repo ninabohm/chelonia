@@ -190,8 +190,7 @@ def get_bookings():
         obj = {
             'id': booking.id,
             'venue_id': booking.venue_id,
-            'date_event': booking.date_event,
-            'time_event': booking.time_event,
+            'datetime_event': booking.datetime_event,
             'user_id': booking.user_id,
             'created_at': booking.created_at,
             'confirmation_code': booking.confirmation_code,
@@ -218,15 +217,13 @@ def create_booking():
     form.venue_id.choices = venue_choices
     if request.method == 'POST':
         venue_id = request.form.get("venue_id")
-        date_event = request.form.get("date_event")
-        time_event = request.form.get("time_event")
-        booking = Booking(venue_id, date_event, time_event, current_user.id)
+        datetime_event = request.form.get("datetime_event").astimezone(pytz.UTC)
+        booking = Booking(venue_id, datetime_event, current_user.id)
+        booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
+        app.logger.info(f"earliest_ticket_datetime for booking_id {booking.id}: {booking.earliest_ticket_datetime}")
         db.session.add(booking)
         db.session.commit()
         app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}")
-        booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
-        db.session.commit()
-        app.logger.info(f"added earliest_ticket_datetime: {booking.earliest_ticket_datetime} for booking_id {booking.id}")
         create_ticket(booking.id)
         return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
@@ -240,8 +237,7 @@ def get_booking_by_id(booking_id):
         {
             'id': booking.id,
             'venue_id': booking.venue_id,
-            'date_event': booking.date_event,
-            'time_event': booking.time_event,
+            'datetime_event': booking.datetime_event,
             'user_id': booking.user_id,
             'created_at': booking.created_at,
             'confirmation_code': booking.confirmation_code,
@@ -295,8 +291,10 @@ def schedule_ticket(booking_id, current_datetime_str, current_user_id):
 @celery.task(name='app.schedule_ticket')
 def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_id):
     app.logger.info(f"creating task: ticket for booking_id {booking_id}")
+    # current time which timezone?
     current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
+    # add tz to this log down here:
     app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     time.sleep(sleep_seconds)
@@ -305,12 +303,7 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
 
 
 def calculate_earliest_ticket_datetime(booking):
-    booking_datetime_str = booking.date_event + "T" + booking.time_event
-    booking_datetime = datetime.strptime(booking_datetime_str, '%Y-%m-%dT%H:%M')
-    app.logger.info(f"booking_datetime local: {booking_datetime}")
-    booking_datetime_utc = booking_datetime.astimezone(pytz.UTC)
-    app.logger.info(f"booking_datetime utc: {booking_datetime_utc}")
-    return booking_datetime_utc - timedelta(hours=96)
+    return booking.datetime_event - timedelta(hours=96)
 
 
 def calculate_timedelta_in_seconds(earliest_ticket_time, current_datetime):
@@ -368,9 +361,9 @@ def choose_ticket_slot(driver, booking_id):
 
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    time_event_formatted = datetime.strptime(booking.time_event, '%H:%M')
-    time_event_corrected = time_event_formatted - timedelta(hours=+1)
-    datetime_selector = f".event-time[data-time='{booking.date_event}T{time_event_corrected.time()}+00:00']"
+    #should be utc already
+    time_event_corrected = booking.datetime_event - timedelta(hours=+1)
+    datetime_selector = f".event-time[data-time='{booking.datetime_event.date()}T{time_event_corrected.time()}+00:00']"
 
     return datetime_selector
 

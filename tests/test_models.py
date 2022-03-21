@@ -48,9 +48,8 @@ class TestBooking(unittest.TestCase):
         db.session.commit()
         user = db.session.query(User).order_by(User.id.desc()).first()
         venue_id = "12"
-        date_event = "2022-03-10"
-        time_event = "14:00"
-        new_booking = Booking(venue_id, date_event, time_event, user.id)
+        datetime_event = datetime(2022, 3, 10, 14, 0)
+        new_booking = Booking(venue_id, datetime_event, user.id)
         db.session.add(new_booking)
         db.session.commit()
         booking = db.session.query(Booking).order_by(Booking.id.desc()).first()
@@ -66,9 +65,8 @@ class TestBooking(unittest.TestCase):
                 user = db.session.query(User).order_by(User.id.desc()).first()
                 current_user = user
                 venue_id = "12"
-                date_event = "2022-03-10"
-                time_event = "14:00"
-                new_booking = Booking(venue_id, date_event, time_event, user.id)
+                datetime_event = datetime(2022, 3, 10, 14, 0)
+                new_booking = Booking(venue_id, datetime_event, user.id)
                 db.session.add(new_booking)
                 db.session.commit()
                 booking = db.session.query(Booking).order_by(Booking.id.desc()).first()

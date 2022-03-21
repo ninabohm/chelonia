@@ -56,18 +56,16 @@ class Booking(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     venue_id = db.Column(db.Integer(), db.ForeignKey("venue.id"))
-    date_event = db.Column(db.String())
-    time_event = db.Column(db.String())
+    datetime_event = db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     confirmation_code = db.Column(db.String())
     ticket = db.relationship("Ticket", backref="booking", uselist=False)
     earliest_ticket_datetime = db.Column(db.DateTime())
 
-    def __init__(self, venue_id, date_event, time_event, user_id):
+    def __init__(self, venue_id, datetime_event, user_id):
         self.venue_id = venue_id
-        self.date_event = date_event
-        self.time_event = time_event
+        self.datetime_event = datetime_event
         self.user_id = user_id
 
 
