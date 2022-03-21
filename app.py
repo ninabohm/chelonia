@@ -11,6 +11,7 @@ if app.config["ENV"] == "production":
 else:
     app.config.from_object("config.DevelopmentConfig")
 app.logger.setLevel(logging.INFO)
+app.config['TIMEZONE'] = "UTC"
 sess = Session()
 
 celery = make_celery(app)

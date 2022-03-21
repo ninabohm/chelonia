@@ -314,9 +314,8 @@ def calculate_timedelta_in_seconds(earliest_ticket_time, current_datetime):
 def check_if_ticket_possible_now(booking_id, current_datetime):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     possible_now = booking.earliest_ticket_datetime <= current_datetime
-    if possible_now:
-        app.logger.info(f"ticket for booking_id: {booking.id} possible now")
-    app.logger.info(f"ticket for booking_id: {booking.id} not possible yet. scheduling for later...")
+    if not possible_now:
+        app.logger.info(f"ticket for booking_id: {booking.id} not possible yet. scheduling for later...")
     return possible_now
 
 
