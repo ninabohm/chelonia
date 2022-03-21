@@ -186,6 +186,7 @@ def get_bookings():
     bookings = db.session.query(Booking).all()
     data = []
     for booking in bookings:
+        booking.datetime_event = booking.datetime_event.astimezone(pytz.timezone('CET'))
         obj = {
             'id': booking.id,
             'venue_id': booking.venue_id,
@@ -225,7 +226,7 @@ def create_booking():
         db.session.commit()
         app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event} UTC, earliest_ticket_datetime: {booking.earliest_ticket_datetime} UTC")
         create_ticket(booking.id)
-        return render_template("booking_show.html", booking=booking, booking_datetime_event=datetime_event.astimezone(pytz.CET))
+        return render_template("booking_show.html", booking=booking, booking_datetime_event=datetime_event.astimezone(pytz.timezone('CET')))
     return render_template("create_booking.html", form=form)
 
 
@@ -291,10 +292,8 @@ def schedule_ticket(booking_id, current_datetime_str, current_user_id):
 @celery.task(name='app.schedule_ticket')
 def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_id):
     app.logger.info(f"creating task: ticket for booking_id {booking_id}")
-    # current time which timezone?
     current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    # add tz to this log down here:
     app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime} UTC")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     time.sleep(sleep_seconds)
