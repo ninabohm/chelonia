@@ -230,7 +230,6 @@ def create_booking():
 def post_booking_and_save(venue_id, date_event, time_event):
     datetime_event_cet = datetime.strptime(date_event + " " + time_event + "+0200", "%Y-%m-%d %H:%M%z")
     datetime_event_utc = datetime_event_cet.astimezone(pytz.UTC)
-    #booking = Booking(venue_id, datetime_event_utc, "3")
     booking = Booking(venue_id, datetime_event_utc, current_user.id)
     booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
     app.logger.info(f"created booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
@@ -302,10 +301,12 @@ def schedule_ticket(booking_id, current_datetime_str, current_user_id):
 @celery.task(name='app.schedule_ticket')
 def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_id):
     app.logger.info(f"creating task: ticket for booking_id {booking_id}")
-    current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
+    current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f%z')
+    app.logger.info(f"current_datetime: {current_datetime}")
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
+    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime} {booking.earliest_ticket_datetime.tzinfo}")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
+    app.logger.info(f"sleep seconds: {str(timedelta(seconds=sleep_seconds))}")
     time.sleep(sleep_seconds)
     #time.sleep(20)
     start_ticket(booking_id, current_user_id)
