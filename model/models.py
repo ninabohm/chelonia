@@ -56,7 +56,7 @@ class Booking(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     venue_id = db.Column(db.Integer(), db.ForeignKey("venue.id"))
-    datetime_event = db.Column(db.DateTime(timezone=True))
+    datetime_event = db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     confirmation_code = db.Column(db.String())

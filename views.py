@@ -3,6 +3,7 @@ import time
 import json
 import os
 import pytz
+from pytz import timezone
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -15,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from model.models import db, Booking, User, Venue, Ticket
 from forms.forms import RegistrationForm, LoginForm, VenueForm, BookingForm
 from datetime import datetime, timedelta
+
 
 
 @login_manager.user_loader
@@ -219,21 +221,23 @@ def create_booking():
         venue_id = request.form.get("venue_id")
         date_event = request.form.get("date_event")
         time_event = request.form.get("time_event")
-        app.logger.info(f"date_event: {date_event}, time_event: {time_event}")
-        datetime_event = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M")
-        datetime_event.replace(tzinfo=pytz.timezone("CET"))
-        datetime_event_utc = datetime_event.astimezone(pytz.UTC)
-        app.logger.info(f"datetime_event: {datetime_event} {datetime_event.tzinfo}")
-        app.logger.info(f"datetime_event_utc: {datetime_event_utc} {datetime_event_utc.tzinfo}")
-        booking = Booking(venue_id, datetime_event_utc, current_user.id)
-        booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
-        app.logger.info(f"----added booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event} {booking.datetime_event.tzinfo}, earliest_ticket_datetime: {booking.earliest_ticket_datetime} {booking.earliest_ticket_datetime.tzinfo}")
-        db.session.add(booking)
-        db.session.commit()
-        app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event} {booking.datetime_event.tzinfo}, earliest_ticket_datetime: {booking.earliest_ticket_datetime} {booking.earliest_ticket_datetime.tzinfo}")
+        booking = post_booking_and_save(venue_id, date_event, time_event)
         create_ticket(booking.id)
-        return render_template("booking_show.html", booking=booking, booking_datetime_event=datetime_event.astimezone(pytz.timezone('CET')))
+        return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
+
+
+def post_booking_and_save(venue_id, date_event, time_event):
+    datetime_event_bln = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M")
+    datetime_event_utc = datetime_event_bln.astimezone(pytz.UTC)
+    # booking = Booking(venue_id, datetime_event_utc, "3")
+    booking = Booking(venue_id, datetime_event_bln, current_user.id)
+    booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
+    app.logger.info(f"created booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
+    db.session.add(booking)
+    db.session.commit()
+    app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
+    return booking
 
 
 @app.route('/booking/<booking_id>')

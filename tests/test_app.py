@@ -4,8 +4,7 @@ from views import *
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from model.models import *
-from flask import url_for, request
-from flask_login import current_user
+from forms.forms import *
 
 
 class TestApp(unittest.TestCase):
@@ -157,16 +156,22 @@ class TestApp(unittest.TestCase):
         ticket_db = db.session.query(Ticket).join(Booking).filter_by(id=booking.id).first()
         self.assertEqual(ticket_db.id, ticket.id)
 
-#     def test_should_return_ticket_confirmation_string(self):
-#         datetime_event = datetime(2022, 3, 16,20, 0)
-#         new_booking = Booking("4", datetime_event, "1")
-#         db.session.add(new_booking)
-#         db.session.commit()
-#         new_booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(new_booking)
-#         db.session.commit()
-#         ticket = Ticket(new_booking.id, "1")
-#         db.session.add(ticket)
-#         db.session.commit()
-#         current_datetime_str = "2022-03-12 13:00:00.000000"
-#         actual = create_ticket_schedule_task(new_booking.id, current_datetime_str, "1")
-#         self.assertEqual(actual, "scheduled ticket 2")
+    @mock.patch('flask_login.utils._get_user')
+    def test_given_correct_booking_details_returns_correct_datetime(self, current_user):
+        data = {
+            'email': 'alice@wonderland.com',
+            'password': 'supersecure'
+        }
+        current_user.return_value = mock.Mock(is_authenticated=True, **data)
+        venue_id = "1"
+        date_event = "2022-03-28"
+        time_event = "20:00"
+
+        booking = post_booking_and_save(venue_id, date_event, time_event)
+        booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
+        db.session.add(booking)
+        db.session.commit()
+
+        expected = datetime(2022, 3, 28, 18, 0)
+        actual = db.session.query(Booking).filter_by(id=booking.id).first().datetime_event
+        self.assertEqual(expected, actual)
