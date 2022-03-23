@@ -301,10 +301,10 @@ def schedule_ticket(booking_id, current_datetime_str, current_user_id):
 @celery.task(name='app.schedule_ticket')
 def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_id):
     app.logger.info(f"creating task: ticket for booking_id {booking_id}")
-    current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f%z')
+    current_datetime = datetime.strptime(current_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
     app.logger.info(f"current_datetime: {current_datetime}")
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime} {booking.earliest_ticket_datetime.tzinfo}")
+    app.logger.info(f"ticket for booking_id: {booking_id} will start on {booking.earliest_ticket_datetime}")
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     app.logger.info(f"sleep seconds: {str(timedelta(seconds=sleep_seconds))}")
     time.sleep(sleep_seconds)
