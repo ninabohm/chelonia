@@ -231,7 +231,7 @@ def post_booking_and_save(venue_id, date_event, time_event):
     datetime_event_bln = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M")
     datetime_event_utc = datetime_event_bln.astimezone(pytz.UTC)
     # booking = Booking(venue_id, datetime_event_utc, "3")
-    booking = Booking(venue_id, datetime_event_bln, current_user.id)
+    booking = Booking(venue_id, datetime_event_utc, current_user.id)
     booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
     app.logger.info(f"created booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
     db.session.add(booking)
