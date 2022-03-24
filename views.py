@@ -356,6 +356,7 @@ def start_ticket(booking_id, current_user_id):
         ticket.status = "CONFIRMED"
         db.session.commit()
         download_pdf(driver, booking_id)
+        app.logger.info("pdf downloaded")
 
 
 def choose_ticket_slot(driver, booking_id):
