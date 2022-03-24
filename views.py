@@ -6,10 +6,8 @@ import pytz
 from pytz import timezone
 from functools import wraps
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, WebDriverException
 from flask import Flask, g, render_template, request, redirect, flash, url_for, session, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from sqlalchemy.exc import IntegrityError
@@ -371,7 +369,8 @@ def choose_ticket_slot(driver, booking_id):
 
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    datetime_corrected = booking.datetime_event - timedelta(hours=1)
+    datetime_corrected = booking.datetime_event
+    app.logger.info(f"datetime_corrected: {datetime_corrected}, booking.datetime: {booking.datetime_event}")
     return f".event-time[data-time='{datetime_corrected.date()}T{datetime_corrected.time()}+00:00']"
 
 

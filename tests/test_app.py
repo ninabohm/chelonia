@@ -1,4 +1,5 @@
 import unittest, pytz
+from pytz import timezone
 from unittest import mock
 from views import *
 from selenium import webdriver
@@ -21,11 +22,12 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_returns_correct_datetime_selector(self):
-        datetime_event = datetime(2022, 3, 7, 19, 15).replace(tzinfo=pytz.UTC)
+        now_cet = datetime(2022, 3, 7, 20, 15).replace(tzinfo=timezone("CET"))
+        datetime_event = now_cet.astimezone(pytz.UTC)
         new_booking = Booking("4", datetime_event, "1")
         db.session.add(new_booking)
         db.session.commit()
-        self.assertEqual(generate_datetime_selector(new_booking.id), ".event-time[data-time='2022-03-07T18:15:00+00:00']")
+        self.assertEqual(generate_datetime_selector(new_booking.id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
 
     def test_returns_confirmation_code_from_url(self):
         with app.app_context():
