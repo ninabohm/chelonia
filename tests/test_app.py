@@ -22,9 +22,8 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_returns_correct_datetime_selector(self):
-        now_cet = datetime(2022, 3, 7, 20, 15).replace(tzinfo=timezone("CET"))
-        datetime_event = now_cet.astimezone(pytz.UTC)
-        new_booking = Booking("4", datetime_event, "1")
+        datetime_event_utc = datetime(2022, 3, 7, 19, 15)
+        new_booking = Booking("4", datetime_event_utc, "1")
         db.session.add(new_booking)
         db.session.commit()
         self.assertEqual(generate_datetime_selector(new_booking.id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
@@ -158,7 +157,6 @@ class TestApp(unittest.TestCase):
         ticket_db = db.session.query(Ticket).join(Booking).filter_by(id=booking.id).first()
         self.assertEqual(ticket_db.id, ticket.id)
 
-
     @mock.patch('flask_login.utils._get_user')
     def test_given_correct_booking_details_returns_correct_datetime(self, current_user):
         data = {
@@ -175,6 +173,6 @@ class TestApp(unittest.TestCase):
         db.session.add(booking)
         db.session.commit()
 
-        expected = datetime(2022, 3, 28, 18, 0)
+        expected = datetime(2022, 3, 28, 19, 0)
         actual = db.session.query(Booking).filter_by(id=booking.id).first().datetime_event
         self.assertEqual(expected, actual)

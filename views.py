@@ -226,9 +226,13 @@ def create_booking():
 
 
 def post_booking_and_save(venue_id, date_event, time_event):
-    datetime_event_cet = datetime.strptime(date_event + " " + time_event + "+0200", "%Y-%m-%d %H:%M%z")
+    datetime_event_unaware = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M")
+    utc_offset = timezone("CET").utcoffset(datetime_event_unaware)
+    datetime_event_cet = datetime.strptime(date_event + " " + time_event + utc_offset, "%Y-%m-%d %H:%M%z")
     datetime_event_utc = datetime_event_cet.astimezone(pytz.UTC)
-    booking = Booking(venue_id, datetime_event_utc, current_user.id)
+    app.logger.info(f"datetime_event_utc: {datetime_event_utc}")
+    # booking = Booking(venue_id, datetime_event_utc, current_user.id)
+    booking = Booking(venue_id, datetime_event_utc, "3")
     booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
     app.logger.info(f"created booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
     db.session.add(booking)
@@ -369,9 +373,7 @@ def choose_ticket_slot(driver, booking_id):
 
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    datetime_corrected = booking.datetime_event
-    app.logger.info(f"datetime_corrected: {datetime_corrected}, booking.datetime: {booking.datetime_event}")
-    return f".event-time[data-time='{datetime_corrected.date()}T{datetime_corrected.time()}+00:00']"
+    return f".event-time[data-time='{booking.datetime_event.date()}T{booking.datetime_event.time()}+00:00']"
 
 
 def apply_voucher(driver):
