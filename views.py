@@ -344,9 +344,9 @@ def start_ticket(booking_id, current_user_id):
     app.logger.info(f"initialized chrome driver")
 
     choose_ticket_slot(driver, booking_id)
-    if 'presale' in driver.page_source:
-        app.logger.info("ticket not selectable yet")
-        return
+    # if 'presale' in driver.page_source:
+    #    app.logger.info("ticket not selectable yet")
+    #    return
     apply_voucher(driver)
     complete_checkout(driver, booking_id)
 
