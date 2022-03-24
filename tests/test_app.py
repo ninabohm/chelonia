@@ -25,7 +25,7 @@ class TestApp(unittest.TestCase):
         new_booking = Booking("4", datetime_event, "1")
         db.session.add(new_booking)
         db.session.commit()
-        self.assertEqual(generate_datetime_selector(new_booking.id), ".event-time[data-time='2022-03-07T19:15:00+00:00']")
+        self.assertEqual(generate_datetime_selector(new_booking.id), ".event-time[data-time='2022-03-07T18:15:00+00:00']")
 
     def test_returns_confirmation_code_from_url(self):
         with app.app_context():
@@ -155,6 +155,7 @@ class TestApp(unittest.TestCase):
         db.session.commit()
         ticket_db = db.session.query(Ticket).join(Booking).filter_by(id=booking.id).first()
         self.assertEqual(ticket_db.id, ticket.id)
+
 
     @mock.patch('flask_login.utils._get_user')
     def test_given_correct_booking_details_returns_correct_datetime(self, current_user):

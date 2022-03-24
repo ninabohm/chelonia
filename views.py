@@ -371,9 +371,8 @@ def choose_ticket_slot(driver, booking_id):
 
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    datetime_selector = f".event-time[data-time='{booking.datetime_event.date()}T{booking.datetime_event.time()}+00:00']"
-
-    return datetime_selector
+    datetime_corrected = booking.datetime_event - timedelta(hours=1)
+    return f".event-time[data-time='{datetime_corrected.date()}T{datetime_corrected.time()}+00:00']"
 
 
 def apply_voucher(driver):
