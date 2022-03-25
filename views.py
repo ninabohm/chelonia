@@ -128,7 +128,7 @@ def login():
         if user is not None and user.check_password(password):
             login_user(user)
             return redirect(url_for('index'))
-        message = "Password and email do not match or user does not exist"
+        message = "Password and email don't match or user doesn't exist"
         return render_template("login.html", form=form,  message=message)
     return render_template("login.html", form=form)
 
