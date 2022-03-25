@@ -88,7 +88,7 @@ def register():
 @app.route("/user/account", methods=['GET'])
 @login_required
 def account():
-    return render_template("account.html", user_first_name=current_user.first_name)
+    return render_template("account.html", user=current_user)
 
 
 @app.route('/user')
@@ -102,6 +102,7 @@ def get_users():
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
+            'venue_email': user.venue_email,
             'bookings': user.bookings
         }
         data.append(obj)

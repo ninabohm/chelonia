@@ -16,6 +16,7 @@
             <th>Created at</th>
             <th>Confirmation code</th>
             <th>Ticket</th>
+            <th>Ticket creation earliest at</th>
         </tr>
         {% for booking in bookings %}
         <tr>
@@ -26,6 +27,7 @@
             <td>{{ booking.created_at }}</td>
             <td>{{ booking.confirmation_code }}</td>
             <td>{{ booking.ticket }}</td>
+            <td>{{ booking.earliest_ticket_datetime }}</td>
         </tr>
         {% endfor %}
     </table>
