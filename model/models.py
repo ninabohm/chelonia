@@ -26,6 +26,7 @@ class User(UserMixin, db.Model):
     venue_email = db.Column(db.String())
     venue_password = db.Column(db.String())
     urban_sports_membership_no = db.Column(db.String())
+    street = db.Column(db.String())
 
     @property
     def password(self):
