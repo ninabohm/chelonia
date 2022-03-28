@@ -57,8 +57,14 @@
             <p>{{ error }}</p>
             {% endfor %}
         </div>
-        <div>
-            <button class="btn btn-primary mt-4" type="submit">Register</button>
+        <div class="mt-4">
+            <a class="btn btn-primary" href="/user/register" role="button">Register</a>
+        </div>
+        <div class="mt-2">
+            <p>
+                Already have an account?
+                <a href="/user/login">Log in</a>
+            </p>
         </div>
     </form>
 {% endblock %}

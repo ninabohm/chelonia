@@ -5,12 +5,14 @@
 {% endblock %}
 
 {% block content %}
-<h1>Welcome to chelonia-app!</h1>
-<p> {{ user_first_name }} </p>
-<div>
-    <img src="/static/chelonia-turtle.svg" alt="chelonia-turtle">
-</div>
-<div>
-    <button class="btn btn-primary mt-4" type="submit" onclick="window.location.href='/booking/create'">Create a booking</button>
+<div class="container h-75">
+    <h1>Welcome to chelonia-app!</h1>
+    <p> {{ user_first_name }} </p>
+    <div>
+        <img src="/static/chelonia-turtle.svg" alt="chelonia-turtle">
+    </div>
+    <div>
+        <button class="btn btn-primary mt-4" type="submit" onclick="window.location.href='/booking/create'">Create a booking</button>
+    </div>
 </div>
 {% endblock %}
