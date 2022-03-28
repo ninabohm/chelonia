@@ -11,7 +11,7 @@ class RegistrationForm(FlaskForm):
     password = PasswordField("Password", [DataRequired(), Length(max=150)])
     venue_email = StringField("Venue E-mail", [DataRequired(), Length(max=150)])
     venue_password = PasswordField("Venue password", [DataRequired(), Length(max=150)])
-    urban_sports_member_no = StringField("Urban Sports Club membership number", [DataRequired(), Length(max=150)])
+    urban_sports_membership_no = StringField("Urban Sports Club membership number", [Length(max=150)])
 
 
 class LoginForm(FlaskForm):

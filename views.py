@@ -73,6 +73,7 @@ def register():
         user.password = request.form.get('password')
         user.venue_email = request.form.get('venue_email')
         user.venue_password = request.form.get('venue_password')
+        user.urban_sports_membership_no = request.form.get('urban_sports_membership_no')
         try:
             db.session.add(user)
             db.session.commit()
