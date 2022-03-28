@@ -78,4 +78,5 @@ wsproto==1.1.0
 WTForms==3.0.1
 zipp==3.7.0
 python-dotenv==0.19.2
+python-json-logger==2.0.2
 
