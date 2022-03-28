@@ -8,6 +8,7 @@ from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
 from flask import Flask, g, render_template, request, redirect, flash, url_for, session, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from sqlalchemy.exc import IntegrityError
@@ -92,32 +93,6 @@ def account():
     return render_template("account.html", user=current_user)
 
 
-@app.route('/user')
-@login_required
-def get_users():
-    users = db.session.query(User).all()
-    data = []
-    for user in users:
-        obj = {
-            'id': user.id,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email': user.email,
-            'venue_email': user.venue_email,
-            'bookings': user.bookings
-        }
-        data.append(obj)
-    response = app.response_class(
-        response=json.dumps(data, default=str),
-        status=200,
-        mimetype='application/json'
-    )
-    content_type = request.headers.get('Content-Type')
-    if content_type == 'application/json':
-        return response
-    return render_template('users.html', users=data)
-
-
 @app.route('/user/login', methods=['GET', 'POST'])
 @requires_not_logged_in
 def login():
@@ -189,6 +164,7 @@ def get_bookings():
     data = []
     for booking in bookings:
         booking.datetime_event = booking.datetime_event.astimezone(pytz.timezone('CET'))
+        booking.earliest_ticket_datetime = booking.earliest_ticket_datetime.astimezone(pytz.timezone('CET'))
         obj = {
             'id': booking.id,
             'venue_id': booking.venue_id,
@@ -269,9 +245,25 @@ def get_booking_by_id(booking_id):
 @app.route('/ticket')
 @login_required
 def get_tickets():
-    tickets = []
-    for item in db.session.query(Ticket).all():
-        tickets.append(item)
+    tickets = db.session.query(Ticket).all()
+    data = []
+    for ticket in tickets:
+        obj = {
+            'id': ticket.id,
+            'booking_id': ticket.booking_id,
+            'created_at': ticket.created_at,
+            'user_id': ticket.user_id,
+            'status': ticket.status
+        }
+        data.append(obj)
+    response = app.response_class(
+        response=json.dumps(data, default=str),
+        status=200,
+        mimetype='application/json'
+    )
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        return response
     return render_template("tickets.html", tickets=tickets)
 
 
@@ -344,9 +336,15 @@ def start_ticket(booking_id, current_user_id):
     driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
     app.logger.info(f"initialized chrome driver")
 
-    choose_ticket_slot(driver, booking_id)
-    apply_voucher(driver)
-    complete_checkout(driver, booking_id)
+    try:
+        choose_ticket_slot(driver, booking_id)
+        apply_voucher(driver)
+        complete_checkout(driver, booking_id)
+    except NoSuchElementException:
+        app.logger.info("ticket slot not available")
+        ticket.status = "ABORTED"
+        db.session.commit()
+        return
 
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     booking.confirmation_code = get_confirmation_code(driver)
