@@ -213,8 +213,10 @@ def change_to_correct_timezone(date_event, time_event):
     datetime_event_berlin = tz.localize(datetime_event_naive)
     app.logger.info(f"datetime_event_berlin: {datetime_event_berlin}")
     datetime_event_utc = datetime_event_berlin.astimezone(pytz.UTC)
+    datetime_event_removed = datetime_event_utc.replace(tzinfo=None)
+    app.logger.info(f"datetime_event_removed: {datetime_event_removed}")
     app.logger.info(f"datetime_event_utc: {datetime_event_utc}")
-    return datetime_event_utc
+    return datetime_event_removed
 
 
 @app.route('/booking/<booking_id>')
