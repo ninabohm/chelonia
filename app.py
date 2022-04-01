@@ -17,7 +17,6 @@ log_handler = logging.StreamHandler()
 formatter = jsonlogger.JsonFormatter()
 log_handler.setFormatter(formatter)
 logger.addHandler(log_handler)
-
 app.config['TIMEZONE'] = "UTC"
 sess = Session()
 

@@ -103,3 +103,4 @@ class Venue(db.Model):
 
 
 db.create_all()
+app.logger.info("created all db tables")

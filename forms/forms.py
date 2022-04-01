@@ -27,4 +27,4 @@ class VenueForm(FlaskForm):
 class BookingForm(FlaskForm):
     venue_id = SelectField("Venue name", coerce=int, validators=[DataRequired(), Length(max=150)])
     date_event = DateField("Date", format='%Y-%m-%d', default=datetime.today, validators=[DataRequired(), Length(max=150)])
-    time_event = TimeField("Time", format='%H:%M', default=datetime.utcnow(), validators=[DataRequired(), Length(max=150)])
+    time_event = TimeField("Time", format='%H:%M', default=datetime.now(), validators=[DataRequired(), Length(max=150)])

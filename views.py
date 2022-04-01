@@ -186,15 +186,17 @@ def create_booking():
         date_event = request.form.get("date_event")
         time_event = request.form.get("time_event")
         booking = post_booking_and_save(venue_id, date_event, time_event)
-        create_ticket(booking.id)
+        venue_url = db.session.query(Venue.venue_url).filter_by(id=venue_id)
+        if venue_url == "https://basement-boulderstudio.de/booking/?drpStartPage=155581628&bookingPluginContainerId=%23drp-booking":
+            create_ticket_bouldering(booking.id)
+        else:
+            create_ticket_swim(booking.id)
         return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
 
 
 def post_booking_and_save(venue_id, date_event, time_event):
-    datetime_event_cet = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M").replace(tzinfo=timezone("CET"))
-    datetime_event_utc = datetime_event_cet.astimezone(pytz.UTC)
-    app.logger.info(f"datetime_event_utc: {datetime_event_utc}")
+    datetime_event_utc = change_to_correct_timezone(date_event, time_event)
     booking = Booking(venue_id, datetime_event_utc, current_user.id)
     #booking = Booking(venue_id, datetime_event_utc, "3")
     booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
@@ -202,6 +204,17 @@ def post_booking_and_save(venue_id, date_event, time_event):
     db.session.commit()
     app.logger.info(f"added booking: id {booking.id}, venue_id: {booking.venue_id}, datetime: {booking.datetime_event}, earliest_ticket_datetime: {booking.earliest_ticket_datetime}")
     return booking
+
+
+def change_to_correct_timezone(date_event, time_event):
+    tz = timezone("Europe/Berlin")
+    datetime_event_naive = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M")
+    app.logger.info(f"datetime_event_naive: {datetime_event_naive}")
+    datetime_event_berlin = tz.localize(datetime_event_naive)
+    app.logger.info(f"datetime_event_berlin: {datetime_event_berlin}")
+    datetime_event_utc = datetime_event_berlin.astimezone(pytz.UTC)
+    app.logger.info(f"datetime_event_utc: {datetime_event_utc}")
+    return datetime_event_utc
 
 
 @app.route('/booking/<booking_id>')
@@ -230,6 +243,9 @@ def get_booking_by_id(booking_id):
     return render_template("booking_show.html", booking=booking)
 
 
+def create_ticket_bouldering(booking_id):
+    return "bouldering"
+
 @app.route('/ticket')
 @login_required
 def get_tickets():
@@ -257,7 +273,7 @@ def get_tickets():
 
 @app.route('/ticket/<booking_id>', methods=['GET', 'POST'])
 @login_required
-def create_ticket(booking_id):
+def create_ticket_swim(booking_id):
     if request.method == 'POST':
         current_datetime = datetime.utcnow()
         ticket = Ticket(booking_id, current_user.id)
@@ -270,13 +286,9 @@ def create_ticket(booking_id):
         current_datetime_str = str(current_datetime)
         schedule_ticket(booking_id, current_datetime_str, current_user.id)
 
-        booking = db.session.query(Booking).filter_by(id=booking_id)
-        return render_template("ticket_scheduled.html", ticket=ticket, booking=booking)
-
 
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):
     create_ticket_schedule_task.delay(booking_id, current_datetime_str, current_user_id)
-    return "successfully scheduled ticket"
 
 
 @celery.task(name='app.schedule_ticket')

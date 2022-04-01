@@ -1,5 +1,4 @@
 import unittest, pytz
-from pytz import timezone
 from unittest import mock
 from views import *
 from selenium import webdriver
@@ -165,14 +164,19 @@ class TestApp(unittest.TestCase):
         }
         current_user.return_value = mock.Mock(is_authenticated=True, **data)
         venue_id = "1"
-        date_event = "2022-03-28"
-        time_event_cet = "20:00"
+        date_event = "2022-04-01"
+        time_event_cet = "07:00"
 
         booking = post_booking_and_save(venue_id, date_event, time_event_cet)
         booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
         db.session.add(booking)
         db.session.commit()
 
-        expected = datetime(2022, 3, 28, 19, 1)
+        expected = datetime(2022, 4, 1, 5, 0)
         actual = db.session.query(Booking).filter_by(id=booking.id).first().datetime_event
         self.assertEqual(expected, actual)
+
+    # def test_open_basement_website(self):
+    #     venue = Venue("basement", "https://basement-boulderstudio.de/booking/?drpStartPage=155581628&bookingPluginContainerId=%23drp-booking")
+    #     booking = Booking("1", datetime(2022, 4, 1, 16, 0), "1")
+
