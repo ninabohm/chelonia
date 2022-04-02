@@ -126,7 +126,7 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_should_return_venue_url(self):
-        venue = Venue("somename", "https://pretix.eu/Baeder/74/")
+        venue = Venue("somename", "https://pretix.eu/Baeder/74/", "swimming")
         db.session.add(venue)
         db.session.commit()
         db.session.query(Venue)
@@ -156,27 +156,34 @@ class TestApp(unittest.TestCase):
         ticket_db = db.session.query(Ticket).join(Booking).filter_by(id=booking.id).first()
         self.assertEqual(ticket_db.id, ticket.id)
 
-    @mock.patch('flask_login.utils._get_user')
-    def test_given_correct_booking_details_returns_correct_datetime(self, current_user):
-        data = {
-            'email': 'alice@wonderland.com',
-            'password': 'supersecure'
-        }
-        current_user.return_value = mock.Mock(is_authenticated=True, **data)
-        venue_id = "1"
-        date_event = "2022-04-01"
-        time_event_cet = "07:00"
+    # @mock.patch('flask_login.utils._get_user')
+    # def test_given_correct_booking_details_returns_correct_datetime(self, current_user):
+    #     data = {
+    #         'email': 'alice@wonderland.com',
+    #         'password': 'supersecure'
+    #     }
+    #     current_user.return_value = mock.Mock(is_authenticated=True, **data)
+    #     venue_id = "1"
+    #     date_event = "2022-04-01"
+    #     time_event_cet = "07:00"
+    #
+    #     booking = post_booking_and_save(venue_id, date_event, time_event_cet)
+    #     booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
+    #     db.session.add(booking)
+    #     db.session.commit()
+    #
+    #     expected = datetime(2022, 4, 1, 5, 0)
+    #     actual = db.session.query(Booking).filter_by(id=booking.id).first().datetime_event
+    #     self.assertEqual(expected, actual)
 
-        booking = post_booking_and_save(venue_id, date_event, time_event_cet)
-        booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
+
+    def test_given_venue_type_bouldering_open_basement_website(self):
+        venue = Venue("basement", "blabla_url", "bouldering")
+        db.session.add(venue)
+        db.session.commit()
+        booking = Booking("1", datetime(2022, 4, 2, 20, 0), "1")
         db.session.add(booking)
         db.session.commit()
-
-        expected = datetime(2022, 4, 1, 5, 0)
-        actual = db.session.query(Booking).filter_by(id=booking.id).first().datetime_event
+        expected = "bouldering ticket!!"
+        actual = decide_ticket_type_and_create_ticket(booking.id)
         self.assertEqual(expected, actual)
-
-    # def test_open_basement_website(self):
-    #     venue = Venue("basement", "https://basement-boulderstudio.de/booking/?drpStartPage=155581628&bookingPluginContainerId=%23drp-booking")
-    #     booking = Booking("1", datetime(2022, 4, 1, 16, 0), "1")
-

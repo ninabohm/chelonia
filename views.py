@@ -17,19 +17,9 @@ from forms.forms import RegistrationForm, LoginForm, VenueForm, BookingForm
 from datetime import datetime, timedelta
 
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
-
-def requires_logged_in(func):
-  @wraps(func)
-  def wrapped_func(*args, **kwargs):
-      form = LoginForm()
-      if "first_name" in session:
-          return func(*args, **kwargs)
-      return redirect(url_for('login'))
-  return wrapped_func
 
 
 def requires_not_logged_in(func):
@@ -43,11 +33,7 @@ def requires_not_logged_in(func):
 
 @app.route('/')
 def index():
-    try:
-        user_first_name = current_user.first_name
-    except AttributeError:
-        user_first_name = ""
-    return render_template("index.html", user_first_name=user_first_name)
+    return redirect(url_for("create_booking"))
 
 
 @app.route('/user/register', methods=['GET', 'POST'])
@@ -183,17 +169,27 @@ def create_booking():
     form = BookingForm()
     form.venue_id.choices = venue_choices
     if request.method == 'POST':
-        venue_id = request.form.get("venue_id")
-        date_event = request.form.get("date_event")
-        time_event = request.form.get("time_event")
-        booking = post_booking_and_save(venue_id, date_event, time_event)
-        venue_url = db.session.query(Venue.venue_url).filter_by(id=venue_id)
-        if venue_url == "https://basement-boulderstudio.de/booking/?drpStartPage=155581628&bookingPluginContainerId=%23drp-booking":
-            create_ticket_bouldering(booking.id)
-        else:
-            create_ticket_swim(booking.id)
+        booking = get_booking_from_form()
+        decide_ticket_type_and_create_ticket(booking.id)
         return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
+
+
+def get_booking_from_form():
+    venue_id = request.form.get("venue_id")
+    date_event = request.form.get("date_event")
+    time_event = request.form.get("time_event")
+    booking = post_booking_and_save(venue_id, date_event, time_event)
+    return booking
+
+
+def decide_ticket_type_and_create_ticket(booking_id):
+    venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
+    app.logger.info(f"venue_type: {venue_type}")
+    if venue_type == "bouldering":
+        return create_ticket_bouldering(booking_id)
+    else:
+        create_ticket_swim(booking_id)
 
 
 def post_booking_and_save(venue_id, date_event, time_event):
@@ -220,35 +216,9 @@ def change_to_correct_timezone(date_event, time_event):
     return datetime_event_removed
 
 
-@app.route('/booking/<booking_id>')
-@login_required
-def get_booking_by_id(booking_id):
-    booking = db.session.query(Booking).filter_by(id=booking_id).first()
-    data = [
-        {
-            'id': booking.id,
-            'venue_id': booking.venue_id,
-            'datetime_event': booking.datetime_event,
-            'user_id': booking.user_id,
-            'created_at': booking.created_at,
-            'confirmation_code': booking.confirmation_code,
-            'ticket_status': booking.ticket
-        }
-    ]
-    response = app.response_class(
-        response=json.dumps(data, default=str),
-        status=200,
-        mimetype='application/json'
-    )
-    content_type = request.headers.get('Content-Type')
-    if content_type == 'application/json':
-        return response
-    return render_template("booking_show.html", booking=booking)
-
-
 def create_ticket_bouldering(booking_id):
     app.logger.info("bouldering ticket!!")
-    return "bouldering"
+    return "bouldering ticket!!"
 
 
 @app.route('/ticket')
@@ -306,7 +276,6 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     app.logger.info(f"sleep seconds: {sleep_seconds}")
     time.sleep(sleep_seconds)
-    #time.sleep(20)
     start_ticket(booking_id, current_user_id)
 
 
