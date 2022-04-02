@@ -170,7 +170,7 @@ def create_booking():
     form.venue_id.choices = venue_choices
     if request.method == 'POST':
         booking = get_booking_from_form()
-        decide_ticket_type_and_create_ticket(booking.id)
+        create_ticket(booking.id)
         return render_template("booking_show.html", booking=booking)
     return render_template("create_booking.html", form=form)
 
@@ -183,13 +183,12 @@ def get_booking_from_form():
     return booking
 
 
-def decide_ticket_type_and_create_ticket(booking_id):
-    venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
-    app.logger.info(f"venue_type: {venue_type}")
-    if venue_type == "bouldering":
-        return create_ticket_bouldering(booking_id)
-    else:
-        create_ticket_swim(booking_id)
+# def decide_ticket_type_and_create_ticket(booking_id):
+#     venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
+#     app.logger.info(f"venue_type: {venue_type}")
+#     if venue_type == "bouldering":
+#     else:
+#         create_ticket(booking_id)
 
 
 def post_booking_and_save(venue_id, date_event, time_event):
@@ -216,9 +215,9 @@ def change_to_correct_timezone(date_event, time_event):
     return datetime_event_removed
 
 
-def create_ticket_bouldering(booking_id):
-    app.logger.info("bouldering ticket!!")
-    return "bouldering ticket!!"
+# def create_ticket_bouldering(booking_id):
+#     ticket = Ticket(booking_id, current_user.id)
+#     return "bouldering ticket!!"
 
 
 @app.route('/ticket')
@@ -246,20 +245,22 @@ def get_tickets():
     return render_template("tickets.html", tickets=tickets)
 
 
-@app.route('/ticket/<booking_id>', methods=['GET', 'POST'])
+@app.route('/ticket/<booking_id>', methods=['POST'])
 @login_required
-def create_ticket_swim(booking_id):
-    if request.method == 'POST':
-        current_datetime = datetime.utcnow()
-        ticket = Ticket(booking_id, current_user.id)
-        db.session.add(ticket)
-        db.session.commit()
+def create_ticket(booking_id):
+    # if request.method == 'POST':
+    ticket = Ticket(booking_id, current_user.id)
+    db.session.add(ticket)
+    db.session.commit()
 
-        if check_if_ticket_possible_now(booking_id, current_datetime):
-            start_ticket(booking_id, current_user.id)
-            return render_template("ticket_show.html", ticket=ticket)
-        current_datetime_str = str(current_datetime)
-        schedule_ticket(booking_id, current_datetime_str, current_user.id)
+    venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
+    if venue_type == "bouldering":
+        return "bouldering ticket!"
+
+    if check_if_ticket_possible_now(booking_id, datetime.utcnow()):
+        start_ticket(booking_id, current_user.id)
+        return render_template("ticket_show.html", ticket=ticket)
+    schedule_ticket(booking_id, str(datetime.utcnow()), current_user.id)
 
 
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):

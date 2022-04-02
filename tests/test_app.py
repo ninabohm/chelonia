@@ -177,13 +177,12 @@ class TestApp(unittest.TestCase):
     #     self.assertEqual(expected, actual)
 
 
-    def test_given_venue_type_bouldering_open_basement_website(self):
-        venue = Venue("basement", "blabla_url", "bouldering")
-        db.session.add(venue)
-        db.session.commit()
-        booking = Booking("1", datetime(2022, 4, 2, 20, 0), "1")
-        db.session.add(booking)
-        db.session.commit()
-        expected = "bouldering ticket!!"
-        actual = decide_ticket_type_and_create_ticket(booking.id)
-        self.assertEqual(expected, actual)
+    # def test_given_venue_type_bouldering_open_basement_website(self):
+    #     venue = Venue("basement", "blabla_url", "bouldering")
+    #     db.session.add(venue)
+    #     db.session.commit()
+    #     booking = Booking("1", datetime(2022, 4, 2, 20, 0), "1")
+    #     db.session.add(booking)
+    #     db.session.commit()
+    #     actual = decide_ticket_type_and_create_ticket(booking.id)
+    #     self.assertEqual("bouldering ticket!!", actual)
