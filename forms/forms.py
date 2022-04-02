@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, IntegerField, SelectField, DateField, TimeField
+from wtforms import StringField, PasswordField, IntegerField, SelectField, DateField, TimeField, RadioField
 from wtforms.validators import DataRequired, Length
 from datetime import datetime
 
@@ -22,6 +22,7 @@ class LoginForm(FlaskForm):
 class VenueForm(FlaskForm):
     venue_name = StringField("Venue name", validators=[DataRequired(), Length(max=150)])
     venue_url = StringField("Venue url", [DataRequired(), Length(max=150)])
+    venue_type = RadioField("Type", choices=[("bouldering", "bouldering"), ("swimming", "swimming")])
 
 
 class BookingForm(FlaskForm):

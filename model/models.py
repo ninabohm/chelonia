@@ -96,10 +96,12 @@ class Venue(db.Model):
     venue_url = db.Column(db.String())
     created_at = db.Column(db.DateTime(), default=datetime.utcnow(), index=True)
     bookings = db.relationship("Booking", backref="venue")
+    venue_type = db.Column(db.String())
 
-    def __init__(self, venue_name, venue_url):
+    def __init__(self, venue_name, venue_url, venue_type):
         self.venue_name = venue_name
         self.venue_url = venue_url
+        self.venue_type = venue_type
 
 
 db.create_all()

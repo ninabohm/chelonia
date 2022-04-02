@@ -112,7 +112,8 @@ def create_venue():
     if request.method == 'POST':
         venue_name = request.form.get("venue_name")
         venue_url = request.form.get("venue_url")
-        venue = Venue(venue_name, venue_url)
+        venue_type = request.form.get("venue_type")
+        venue = Venue(venue_name, venue_url, venue_type)
         db.session.add(venue)
         db.session.commit()
         app.logger.info(f"added venue {venue.venue_name} with id {venue.id}")
@@ -246,7 +247,9 @@ def get_booking_by_id(booking_id):
 
 
 def create_ticket_bouldering(booking_id):
+    app.logger.info("bouldering ticket!!")
     return "bouldering"
+
 
 @app.route('/ticket')
 @login_required
