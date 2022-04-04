@@ -202,3 +202,19 @@ class TestApp(unittest.TestCase):
         db.session.add(booking)
         db.session.commit()
         self.assertEqual(generate_datetime_selector(booking.id), "//div[normalize-space()='4']")
+
+    def test_given_bouldering_ticket_next_month_returns_correct_datetimeselector(self):
+        bouldering_venue = Venue("bla", "blubb", "bouldering")
+        booking = Booking("1", datetime(2022, 5, 1, 20, 0), "1")
+        db.session.add(bouldering_venue)
+        db.session.add(booking)
+        db.session.commit()
+        self.assertEqual(generate_datetime_selector(booking.id), "//div[normalize-space()='1']")
+
+    def test_given_date_is_next_month_returns_true(self):
+        booking = Booking("1", datetime(2022, 5, 1, 20, 0), "1")
+        db.session.add(booking)
+        db.session.commit()
+        self.assertTrue(check_if_next_month(booking.id))
+
+

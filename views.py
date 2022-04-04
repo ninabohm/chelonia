@@ -196,13 +196,10 @@ def post_booking_and_save(venue_id, date_event, time_event):
 def change_to_correct_timezone(date_event, time_event):
     tz = timezone("Europe/Berlin")
     datetime_event_naive = datetime.strptime(date_event + " " + time_event, "%Y-%m-%d %H:%M")
-    app.logger.info(f"datetime_event_naive: {datetime_event_naive}")
     datetime_event_berlin = tz.localize(datetime_event_naive)
-    app.logger.info(f"datetime_event_berlin: {datetime_event_berlin}")
     datetime_event_utc = datetime_event_berlin.astimezone(pytz.UTC)
-    app.logger.info(f"datetime_event_utc: {datetime_event_utc}")
     datetime_event_removed = datetime_event_utc.replace(tzinfo=None)
-    app.logger.info(f"datetime_event_removed: {datetime_event_removed}")
+    app.logger.info(f"datetime_event naive / berlin / utc / removed: {datetime_event_naive} / {datetime_event_berlin} / {datetime_event_utc} / {datetime_event_removed}")
     return datetime_event_removed
 
 
@@ -253,9 +250,8 @@ def create_ticket(booking_id):
 def start_ticket_bouldering(booking_id):
     driver = initialize_chrome_driver()
     open_venue_website(driver, booking_id)
-    choose_ticket_slot_bouldering(driver)
+    choose_ticket_slot_bouldering(driver, booking_id)
     # confirm
-
     # enter data
     # commit
     # add confirmation to ticket
@@ -263,11 +259,24 @@ def start_ticket_bouldering(booking_id):
 
 
 def choose_ticket_slot_bouldering(driver, booking_id):
+    if check_if_next_month(booking_id):
+        next_button = driver.find_element(By.CSS_SELECTOR, ".drp-course-month-selector-next")
+        next_button.click()
     date_selector = generate_datetime_selector(booking_id)
     date_field = driver.find_element(By.XPATH, date_selector)
     date_field.click()
-    time.sleep(2)
+    time.sleep(1)
     app.logger.info("ticket slot chosen")
+
+
+def check_if_next_month(booking_id):
+    booking_created = db.session.query(Booking.created_at).filter_by(id=booking_id).first()[0]
+    booking_date = db.session.query(Booking.datetime_event).filter_by(id=booking_id).first()[0]
+    app.logger.info(booking_date.month)
+    app.logger.info(booking_created.month)
+    if booking_date.month == booking_created.month:
+        return False
+    return True
 
 
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):
