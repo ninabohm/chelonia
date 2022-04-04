@@ -217,4 +217,5 @@ class TestApp(unittest.TestCase):
         db.session.commit()
         self.assertTrue(check_if_next_month(booking.id))
 
-
+    def test_given_booking_returns_datetime(self):
+        self.assertFalse(True)

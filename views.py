@@ -279,6 +279,11 @@ def check_if_next_month(booking_id):
     return True
 
 
+def click_booking_button(driver, booking_id):
+    booking_datetime = db.session.query(Booking.datetime_event).filter_by(id=booking_id).first()
+    return booking_datetime
+
+
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):
     create_ticket_schedule_task.delay(booking_id, current_datetime_str, current_user_id)
 
