@@ -183,18 +183,9 @@ def get_booking_from_form():
     return booking
 
 
-# def decide_ticket_type_and_create_ticket(booking_id):
-#     venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
-#     app.logger.info(f"venue_type: {venue_type}")
-#     if venue_type == "bouldering":
-#     else:
-#         create_ticket(booking_id)
-
-
 def post_booking_and_save(venue_id, date_event, time_event):
     datetime_event_utc = change_to_correct_timezone(date_event, time_event)
     booking = Booking(venue_id, datetime_event_utc, current_user.id)
-    #booking = Booking(venue_id, datetime_event_utc, "3")
     booking.earliest_ticket_datetime = calculate_earliest_ticket_datetime(booking)
     db.session.add(booking)
     db.session.commit()
@@ -213,11 +204,6 @@ def change_to_correct_timezone(date_event, time_event):
     datetime_event_removed = datetime_event_utc.replace(tzinfo=None)
     app.logger.info(f"datetime_event_removed: {datetime_event_removed}")
     return datetime_event_removed
-
-
-# def create_ticket_bouldering(booking_id):
-#     ticket = Ticket(booking_id, current_user.id)
-#     return "bouldering ticket!!"
 
 
 @app.route('/ticket')
@@ -248,19 +234,40 @@ def get_tickets():
 @app.route('/ticket/<booking_id>', methods=['POST'])
 @login_required
 def create_ticket(booking_id):
-    # if request.method == 'POST':
     ticket = Ticket(booking_id, current_user.id)
+    #ticket = Ticket(booking_id, "3")
     db.session.add(ticket)
     db.session.commit()
 
     venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
     if venue_type == "bouldering":
-        return "bouldering ticket!"
+        return start_ticket_bouldering(booking_id)
 
-    if check_if_ticket_possible_now(booking_id, datetime.utcnow()):
-        start_ticket(booking_id, current_user.id)
-        return render_template("ticket_show.html", ticket=ticket)
-    schedule_ticket(booking_id, str(datetime.utcnow()), current_user.id)
+    if venue_type == "swimming":
+        if check_if_ticket_possible_now(booking_id, datetime.utcnow()):
+            start_ticket_swimming(booking_id, current_user.id)
+            return render_template("ticket_show.html", ticket=ticket)
+        schedule_ticket(booking_id, str(datetime.utcnow()), current_user.id)
+
+
+def start_ticket_bouldering(booking_id):
+    driver = initialize_chrome_driver()
+    open_venue_website(driver, booking_id)
+    choose_ticket_slot_bouldering(driver)
+    # confirm
+
+    # enter data
+    # commit
+    # add confirmation to ticket
+    return "bouldering ticket!!"
+
+
+def choose_ticket_slot_bouldering(driver, booking_id):
+    date_selector = generate_datetime_selector(booking_id)
+    date_field = driver.find_element(By.XPATH, date_selector)
+    date_field.click()
+    time.sleep(2)
+    app.logger.info("ticket slot chosen")
 
 
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):
@@ -277,7 +284,7 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
     sleep_seconds = calculate_timedelta_in_seconds(booking.earliest_ticket_datetime, current_datetime)
     app.logger.info(f"sleep seconds: {sleep_seconds}")
     time.sleep(sleep_seconds)
-    start_ticket(booking_id, current_user_id)
+    start_ticket_swimming(booking_id, current_user_id)
 
 
 def calculate_earliest_ticket_datetime(booking):
@@ -298,20 +305,14 @@ def check_if_ticket_possible_now(booking_id, current_datetime):
     return possible_now
 
 
-def start_ticket(booking_id, current_user_id):
+def start_ticket_swimming(booking_id, current_user_id):
     ticket = db.session.query(Ticket).join(Booking).filter_by(id=booking_id).first()
     app.logger.info(f"started ticket: id: {ticket.id}, booking_id: {booking_id}, user id: {current_user_id}")
 
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--no-sandbox")
-    driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
-    app.logger.info(f"initialized chrome driver")
+    driver = initialize_chrome_driver()
 
     try:
-        choose_ticket_slot(driver, booking_id)
+        choose_ticket_slot_swimming(driver, booking_id)
         apply_voucher(driver)
         complete_checkout(driver, booking_id)
     except NoSuchElementException:
@@ -328,20 +329,41 @@ def start_ticket(booking_id, current_user_id):
         db.session.commit()
         download_pdf(driver, booking_id)
         app.logger.info("pdf downloaded")
+    app.logger.info("an error occurred")
 
 
-def choose_ticket_slot(driver, booking_id):
-    booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
+def initialize_chrome_driver():
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
+    app.logger.info(f"initialized chrome driver")
+    return driver
+
+
+def choose_ticket_slot_swimming(driver, booking_id):
     datetime_selector = generate_datetime_selector(booking_id)
-    driver.get(booking_venue.venue_url)
     date_field = driver.find_element(By.CSS_SELECTOR, datetime_selector)
     date_field.click()
-    app.logger.info("ticket slot chosen")
     time.sleep(2)
+    app.logger.info("ticket slot chosen")
+
+
+def open_venue_website(driver, booking_id):
+    booking_venue = db.session.query(Venue).join(Booking).filter_by(id=booking_id).first()
+    driver.get(booking_venue.venue_url)
+    app.logger.info("venue website opened")
 
 
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
+    result = db.session.query(Venue.venue_type).filter_by(id=booking.venue_id)
+    app.logger.info(f"venue_type: {result}")
+    for venue_type, in result:
+        if venue_type == "bouldering":
+            return f"//div[normalize-space()='{booking.datetime_event.date().day}']"
     return f".event-time[data-time='{booking.datetime_event.date()}T{booking.datetime_event.time()}+00:00']"
 
 
