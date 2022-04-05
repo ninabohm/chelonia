@@ -8,6 +8,8 @@ from flask_migrate import Migrate
 db = SQLAlchemy(app)
 with app.app_context():
     migrate = Migrate(app, db)
+    db.create_all()
+    app.logger.info("created all db tables")
 
 
 class User(UserMixin, db.Model):
@@ -109,5 +111,5 @@ class Venue(db.Model):
         self.venue_type = venue_type
 
 
-db.create_all()
-app.logger.info("created all db tables")
+# db.create_all()
+# app.logger.info("created all db tables")
