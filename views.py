@@ -254,7 +254,7 @@ def start_ticket_bouldering(booking_id):
     ticket = Ticket(booking_id, current_user.id)
     db.session.add(ticket)
     db.session.commit()
-
+    app.logger.info(f"added ticket, id: {ticket.id}, user: {current_user.id}")
     driver = initialize_chrome_driver()
     open_venue_website(driver, booking_id)
 
