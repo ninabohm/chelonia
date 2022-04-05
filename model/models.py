@@ -25,8 +25,13 @@ class User(UserMixin, db.Model):
     tickets = db.relationship("Ticket", backref="user")
     venue_email = db.Column(db.String())
     venue_password = db.Column(db.String())
-    urban_sports_membership_no = db.Column(db.String())
+    birthday = db.Column(db.Date())
     street = db.Column(db.String())
+    house_no = db.Column(db.String())
+    postal_code = db.Column(db.String())
+    city = db.Column(db.String())
+    phone = db.Column(db.String())
+    urban_sports_membership_no = db.Column(db.String())
 
     @property
     def password(self):

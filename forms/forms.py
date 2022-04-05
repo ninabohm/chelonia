@@ -11,6 +11,12 @@ class RegistrationForm(FlaskForm):
     password = PasswordField("Password", [DataRequired(), Length(max=150)])
     venue_email = StringField("Venue E-mail", [DataRequired(), Length(max=150)])
     venue_password = PasswordField("Venue password", [DataRequired(), Length(max=150)])
+    birthday = DateField("Birthday", [DataRequired(), Length(min=1, max=150)])
+    street = StringField("Street", [DataRequired(), Length(min=1, max=150)])
+    house_no = StringField("House number", [DataRequired(), Length(min=1, max=150)])
+    postal_code = StringField("Postal code", [DataRequired(), Length(min=1, max=150)])
+    city = StringField("City", [DataRequired(), Length(min=1, max=150)])
+    phone = StringField("Phone", [DataRequired(), Length(min=1, max=150)])
     urban_sports_membership_no = StringField("Urban Sports Club membership number", [Length(max=150)])
 
 

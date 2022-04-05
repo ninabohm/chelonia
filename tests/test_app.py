@@ -217,5 +217,34 @@ class TestApp(unittest.TestCase):
         db.session.commit()
         self.assertTrue(check_if_next_month(booking.id))
 
-    def test_given_booking_returns_datetime(self):
-        self.assertFalse(True)
+    def test_given_timeslot_returns_iterator(self):
+        bouldering_venue = Venue("bla", "blubb", "bouldering")
+        booking = Booking("1", datetime(2022, 4, 5, 14, 45), "1")
+        db.session.add(bouldering_venue)
+        db.session.add(booking)
+        db.session.commit()
+        self.assertEqual(calc_quarter_count(booking.id), 4)
+
+    def test_given_timeslot_returns_iterator_2(self):
+        bouldering_venue = Venue("bla", "blubb", "bouldering")
+        booking = Booking("1", datetime(2022, 4, 5, 14, 0), "1")
+        db.session.add(bouldering_venue)
+        db.session.add(booking)
+        db.session.commit()
+        self.assertEqual(calc_quarter_count(booking.id), 1)
+
+    def test_given_timeslot_returns_iterator_2(self):
+        bouldering_venue = Venue("bla", "blubb", "bouldering")
+        booking = Booking("1", datetime(2022, 4, 5, 17, 0), "1")
+        db.session.add(bouldering_venue)
+        db.session.add(booking)
+        db.session.commit()
+        self.assertEqual(calc_quarter_count(booking.id), 13)
+
+    def test_given_timeslot_next_day_returns_iterator(self):
+        bouldering_venue = Venue("bla", "blubb", "bouldering")
+        booking = Booking("1", datetime(2022, 4, 6, 14, 30), "1")
+        db.session.add(bouldering_venue)
+        db.session.add(booking)
+        db.session.commit()
+        self.assertEqual(calc_quarter_count(booking.id), 3)

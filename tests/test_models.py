@@ -74,3 +74,4 @@ class TestBooking(unittest.TestCase):
                 db.session.add(ticket)
                 db.session.commit()
                 self.assertEqual(ticket.booking_id, booking.id)
+

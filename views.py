@@ -8,6 +8,7 @@ from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 from flask import Flask, g, render_template, request, redirect, flash, url_for, session, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
@@ -48,15 +49,22 @@ def register():
         user.password = request.form.get('password')
         user.venue_email = request.form.get('venue_email')
         user.venue_password = request.form.get('venue_password')
+        user.birthday = request.form.get('birthday')
+        user.street = request.form.get('street')
+        user.house_no = request.form.get('house_no')
+        user.postal_code = request.form.get('postal_code')
+        user.city = request.form.get('city')
+        user.phone = request.form.get('phone')
         user.urban_sports_membership_no = request.form.get('urban_sports_membership_no')
         try:
             db.session.add(user)
             db.session.commit()
-            app.logger.info(f"added user {user.first_name} {user.last_name} with id {user.id} to db")
+            app.logger.info(f"added user {user.first_name} {user.last_name} to db")
             return redirect(url_for('login'))
         except IntegrityError:
             db.session.rollback()
             message = "An account with this email already exists. Please try again"
+            app.logger.info(f"couldn't register user {user.first_name} {user.last_name}")
             return render_template("register.html", form=form, error=message)
     return render_template("register.html", form=form)
 
@@ -77,7 +85,7 @@ def login():
         user = db.session.query(User).filter_by(email=email).first()
         if user is not None and user.check_password(password):
             login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('create_booking'))
         message = "Password and email don't match or user doesn't exist"
         return render_template("login.html", form=form,  message=message)
     return render_template("login.html", form=form)
@@ -231,57 +239,106 @@ def get_tickets():
 @app.route('/ticket/<booking_id>', methods=['POST'])
 @login_required
 def create_ticket(booking_id):
-    ticket = Ticket(booking_id, current_user.id)
-    #ticket = Ticket(booking_id, "3")
-    db.session.add(ticket)
-    db.session.commit()
-
     venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
     if venue_type == "bouldering":
         return start_ticket_bouldering(booking_id)
 
     if venue_type == "swimming":
         if check_if_ticket_possible_now(booking_id, datetime.utcnow()):
-            start_ticket_swimming(booking_id, current_user.id)
-            return render_template("ticket_show.html", ticket=ticket)
+            return start_ticket_swimming(booking_id, current_user.id)
+
         schedule_ticket(booking_id, str(datetime.utcnow()), current_user.id)
 
 
 def start_ticket_bouldering(booking_id):
+    ticket = Ticket(booking_id, current_user.id)
+    db.session.add(ticket)
+    db.session.commit()
+
     driver = initialize_chrome_driver()
     open_venue_website(driver, booking_id)
-    choose_ticket_slot_bouldering(driver, booking_id)
-    # confirm
-    # enter data
-    # commit
-    # add confirmation to ticket
-    return "bouldering ticket!!"
+
+    try:
+        choose_ticket_slot_bouldering(driver, booking_id)
+        enter_user_data(driver)
+        accept_privacy_and_book(driver)
+        if "Glückwunsch" in driver.page_source:
+            ticket.status = "CONFIRMED"
+            db.session.commit()
+    except NoSuchElementException:
+        app.logger.info("ticket slot not available")
+        ticket.status = "ABORTED"
+        db.session.commit()
+        return
+    return ticket
 
 
 def choose_ticket_slot_bouldering(driver, booking_id):
+    next_button = driver.find_element(By.CSS_SELECTOR, ".drp-course-month-selector-next")
     if check_if_next_month(booking_id):
-        next_button = driver.find_element(By.CSS_SELECTOR, ".drp-course-month-selector-next")
         next_button.click()
     date_selector = generate_datetime_selector(booking_id)
     date_field = driver.find_element(By.XPATH, date_selector)
     date_field.click()
+    click_booking_button(driver, booking_id, next_button)
     time.sleep(1)
     app.logger.info("ticket slot chosen")
+
+
+def enter_user_data(driver):
+    driver.find_element(By.NAME, "first-name").send_keys(current_user.first_name)
+    driver.find_element(By.NAME, "last-name").send_keys(current_user.last_name)
+    driver.find_element(By.NAME, "date-of-birth").send_keys("14021994")
+    driver.find_element(By.NAME, "street-and-house-number").send_keys("Am Krögel 3")
+    driver.find_element(By.NAME, "postal-code").send_keys("10179")
+    driver.find_element(By.NAME, "city").send_keys("Berlin")
+    driver.find_element(By.NAME, "phone-mobile").send_keys("01736068206")
+    driver.find_element(By.NAME, "email").send_keys(current_user.venue_email)
+    driver.find_element(By.CSS_SELECTOR, "option[value='155589630']").click()
+    driver.find_element(By.NAME, "participant-additional-field-value").send_keys("122345")
+    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    time.sleep(1)
+    app.logger.info("user data entered")
+
+
+def accept_privacy_and_book(driver):
+    driver.find_element(By.CSS_SELECTOR, "drp-booking-data-processing-cb").click()
+    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    time.sleep(1)
+    app.logger.info("privacy accepted and booking finalized")
+
+
+def click_booking_button(driver, booking_id, next_button):
+    iterator = ActionChains(driver).move_to_element(next_button)
+    count = calc_quarter_count(booking_id)
+    for x in range(0, count):
+        iterator.send_keys(Keys.TAB).perform()
+    iterator.send_keys(Keys.ENTER).perform()
+    app.logger.info(f"clicked booking button at position {count}")
+
+
+def calc_quarter_count(booking_id):
+    minutes = calc_minutes(booking_id)
+    count = int(minutes / 15 + 1)
+    return count
 
 
 def check_if_next_month(booking_id):
     booking_created = db.session.query(Booking.created_at).filter_by(id=booking_id).first()[0]
     booking_date = db.session.query(Booking.datetime_event).filter_by(id=booking_id).first()[0]
-    app.logger.info(booking_date.month)
-    app.logger.info(booking_created.month)
     if booking_date.month == booking_created.month:
         return False
+    app.logger.info("booking_date next month, changing calendar view")
     return True
 
 
-def click_booking_button(driver, booking_id):
-    booking_datetime = db.session.query(Booking.datetime_event).filter_by(id=booking_id).first()
-    return booking_datetime
+def calc_minutes(booking_id):
+    booking_datetime = db.session.query(Booking.datetime_event).filter_by(id=booking_id).first()[0]
+    minutes = booking_datetime.minute
+    hours_normalized = booking_datetime - timedelta(hours=14)
+    total_minutes = hours_normalized.hour * 60 + minutes
+    app.logger.info(f"total_minutes: {total_minutes}")
+    return total_minutes
 
 
 def schedule_ticket(booking_id, current_datetime_str, current_user_id):
@@ -320,7 +377,10 @@ def check_if_ticket_possible_now(booking_id, current_datetime):
 
 
 def start_ticket_swimming(booking_id, current_user_id):
-    ticket = db.session.query(Ticket).join(Booking).filter_by(id=booking_id).first()
+    ticket = Ticket(booking_id, current_user.id)
+    db.session.add(ticket)
+    db.session.commit()
+
     app.logger.info(f"started ticket: id: {ticket.id}, booking_id: {booking_id}, user id: {current_user_id}")
 
     driver = initialize_chrome_driver()
@@ -344,6 +404,8 @@ def start_ticket_swimming(booking_id, current_user_id):
         download_pdf(driver, booking_id)
         app.logger.info("pdf downloaded")
     app.logger.info("an error occurred")
+
+    return ticket
 
 
 def initialize_chrome_driver():
@@ -374,7 +436,6 @@ def open_venue_website(driver, booking_id):
 def generate_datetime_selector(booking_id):
     booking = db.session.query(Booking).filter_by(id=booking_id).first()
     result = db.session.query(Venue.venue_type).filter_by(id=booking.venue_id)
-    app.logger.info(f"venue_type: {result}")
     for venue_type, in result:
         if venue_type == "bouldering":
             return f"//div[normalize-space()='{booking.datetime_event.date().day}']"

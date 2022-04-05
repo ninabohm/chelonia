@@ -7,64 +7,95 @@
 {% block content %}
     <h1>Register</h1>
     <p>{{ error }}</p>
+    <div class="mt-2">
+        <p>
+            Already have an account?
+            <a href="/user/login">Log in</a>
+        </p>
+    </div>
     <form class="register-form" id="register-form" action="/user/register" method="POST">
         <div class="form-group col-lg-4 mx-auto mt-2" id="first_name">
-            {{ form.first_name.label }}
             {{ form.first_name(class_="form-control mt-2", autofocus="true",  id="first_name", placeholder="First name")}}
             {% for error in form.first_name.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
         <div class="form-group col-lg-4 mx-auto mt-2" id="last_name">
-            {{ form.last_name.label }}
             {{ form.last_name(class_="form-control mt-2",  id="last_name", placeholder="Last name")}}
             {% for error in form.last_name.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
         <div class="form-group col-lg-4 mx-auto mt-2" id="email">
-            {{ form.email.label }}
             {{ form.email(class_="form-control mt-2",  id="email", placeholder="E-mail")}}
             {% for error in form.email.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
         <div class="form-group col-lg-4 mx-auto mt-2">
-            {{ form.password.label }}
             {{ form.password(class_="form-control mt-2", id="password", placeholder="Password min 6 characters")}}
             {% for error in form.password.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
         <div class="form-group col-lg-4 mx-auto mt-2">
-            {{ form.venue_email.label }}
             {{ form.venue_email(class_="form-control mt-2", id="venue_email", placeholder="Venue E-mail")}}
             {% for error in form.venue_email.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
         <div class="form-group col-lg-4 mx-auto mt-2">
-            {{ form.venue_password.label }}
             {{ form.venue_password(class_="form-control mt-2", id="venue_password", placeholder="Venue password")}}
             {% for error in form.venue_password.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
         <div class="form-group col-lg-4 mx-auto mt-2">
-            {{ form.urban_sports_membership_no.label }}
-            {{ form.urban_sports_membership_no(class_="form-control mt-2", id="urban_sports_membership_no", placeholder="USC Membership Number")}}
+            {{ form.birthday(class_="form-control mt-2", id="birthday")}}
+            {% for error in form.birthday.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.street(class_="form-control mt-2", id="street", placeholder="Street")}}
+            {% for error in form.street.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.house_no.label }}
+            {{ form.house_no(class_="form-control mt-2", id="house_no")}}
+            {% for error in form.house_no.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.postal_code.label }}
+            {{ form.postal_code(class_="form-control mt-2", id="postal_code", placeholder="Postal Code")}}
+            {% for error in form.postal_code.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.city(class_="form-control mt-2", id="city", placeholder="City")}}
+            {% for error in form.city.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.phone(class_="form-control mt-2", id="phone", placeholder="Phone")}}
+            {% for error in form.phone.errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        <div class="form-group col-lg-4 mx-auto mt-2">
+            {{ form.urban_sports_membership_no(class_="form-control mt-2", id="urban_sports_membership_no", placeholder="Urban Sports membership number")}}
             {% for error in form.urban_sports_membership_no.errors %}
             <p>{{ error }}</p>
             {% endfor %}
         </div>
-        <div class="mt-4">
-            <a class="btn btn-primary" href="/user/register" role="button">Register</a>
-        </div>
-        <div class="mt-2">
-            <p>
-                Already have an account?
-                <a href="/user/login">Log in</a>
-            </p>
+        <div>
+            <button class="btn btn-primary mt-3" type="submit">Register</button>
         </div>
     </form>
 {% endblock %}
