@@ -1,6 +1,7 @@
 import os
 import redis
 
+
 class Config(object):
     DEBUG = False
     TESTING = False
@@ -15,6 +16,7 @@ class Config(object):
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

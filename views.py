@@ -260,18 +260,18 @@ def start_ticket_bouldering(booking_id):
     driver = initialize_chrome_driver()
     open_venue_website(driver, booking_id)
 
-    try:
-        choose_ticket_slot_bouldering(driver, booking_id)
-        enter_user_data(driver)
-        accept_privacy_and_book(driver)
-        if "Glückwunsch" in driver.page_source:
-            ticket.status = "CONFIRMED"
-            db.session.commit()
-    except NoSuchElementException:
-        app.logger.info("ticket slot not available")
-        ticket.status = "ABORTED"
+    # try:
+    choose_ticket_slot_bouldering(driver, booking_id)
+    enter_user_data(driver)
+    accept_privacy_and_book(driver)
+    if "Glückwunsch" in driver.page_source:
+        ticket.status = "CONFIRMED"
         db.session.commit()
-        return
+    # except NoSuchElementException:
+    #     app.logger.info("ticket slot not available, aborting")
+    #     ticket.status = "ABORTED"
+    #     db.session.commit()
+    #     return
     return ticket
 
 
@@ -304,7 +304,10 @@ def enter_user_data(driver):
 
 
 def accept_privacy_and_book(driver):
-    driver.find_element(By.CSS_SELECTOR, "drp-booking-data-processing-cb").click()
+    privacy_field = driver.find_element(By.CLASS_NAME, "row  one-col-row no-row-hoverimage  row-2")
+    iterator = ActionChains(driver).move_to_element(privacy_field)
+    #checkbox_privacy = driver.find_element(By.CSS_SELECTOR, "drp-booking-data-processing-cb")
+    iterator.send_keys(Keys.TAB * 4).click().perform()
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
     time.sleep(1)
     app.logger.info("privacy accepted and booking finalized")
@@ -401,7 +404,7 @@ def start_ticket_swimming(booking_id, current_user_id):
         apply_voucher(driver)
         complete_checkout(driver, booking_id)
     except NoSuchElementException:
-        app.logger.info("ticket slot not available")
+        app.logger.info("ticket slot not available, aborting")
         ticket.status = "ABORTED"
         db.session.commit()
         return
@@ -422,7 +425,8 @@ def start_ticket_swimming(booking_id, current_user_id):
 def initialize_chrome_driver():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    chrome_options.add_argument("--headless")
+    if app.config["ENV"] == "production":
+        chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
