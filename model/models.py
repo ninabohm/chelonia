@@ -111,5 +111,5 @@ class Venue(db.Model):
         self.venue_type = venue_type
 
 
-# db.create_all()
-# app.logger.info("created all db tables")
+db.create_all()
+app.logger.info("created all db tables - second")
