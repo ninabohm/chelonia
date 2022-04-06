@@ -216,6 +216,7 @@ def get_booking_from_form():
     venue_id = request.form.get("venue_id")
     date_event = request.form.get("date_event")
     time_event = request.form.get("time_event")
+    app.logger.info("got booking data from form")
     booking = post_booking_and_save(venue_id, date_event, time_event)
     return booking
 
@@ -452,8 +453,7 @@ def start_ticket_swimming(booking_id, current_user_id):
 def initialize_chrome_driver():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    if app.config["ENV"] == "production":
-        chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
