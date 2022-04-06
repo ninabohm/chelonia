@@ -5,31 +5,31 @@
 {% endblock %}
 
 {% block content %}
-<h1>Bookings</h1>
+<h1>Your Bookings</h1>
 <div class="container d-flex justify-content-center">
-    <table class="table table-responsive" style="text-align: center">
-        <tr>
-            <th>Booking id</th>
-            <th>Venue id</th>
-            <th>Date and time</th>
-            <th>User id</th>
-            <th>Created at</th>
+    <div class="mt-5">
+        <table class="table">
+            <th>Date</th>
+            <th>Time</th>
+            <th>Venue Id</th>
             <th>Confirmation code</th>
-            <th>Ticket</th>
             <th>Ticket creation earliest at</th>
-        </tr>
-        {% for booking in bookings %}
-        <tr>
-            <td>{{ booking.id }}</td>
-            <td>{{ booking.venue_id }}</td>
-            <td>{{ booking.datetime_event }}</td>
-            <td>{{ booking.user_id }}</td>
-            <td>{{ booking.created_at }}</td>
-            <td>{{ booking.confirmation_code }}</td>
-            <td>{{ booking.ticket }}</td>
-            <td>{{ booking.earliest_ticket_datetime }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+            <th>Ticket Id</th>
+            <th>Created at</th>
+            <th>Booking Id</th>
+            {% for booking in user.bookings %}
+            <tr>
+                <td>{{ booking.datetime_event.date() }}</td>
+                <td>{{ booking.datetime_event.time() }}</td>
+                <td>{{ booking.venue_id }}</td>
+                <td>{{ booking.confirmation_code }}</td>
+                <td>{{ booking.earliest_ticket_datetime }}</td>
+                <td>{{ booking.ticket.id }}</td>
+                <td>{{ booking.created_at }}</td>
+                <td>{{ booking.id }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -5,27 +5,47 @@
 {% endblock %}
 
 {% block content %}
-<h1>Show Booking</h1>
-<div class="container d-flex justify-content-center">
-    <table class="table table-responsive" style="text-align: center">
-        <tr>
-            <th>Booking id</th>
-            <th>Venue id</th>
-            <th>Date and time</th>
-            <th>User id</th>
-            <th>Created at</th>
-            <th>Confirmation code</th>
-            <th>Ticket creation earliest at</th>
-        </tr>
-        <tr>
-            <td>{{ booking.id }}</td>
-            <td>{{ booking.venue_id }}</td>
-            <td>{{ booking.datetime_event }}</td>
-            <td>{{ booking.user_id }}</td>
-            <td>{{ booking.created_at }}</td>
-            <td>{{ booking.confirmation_code }}</td>
-            <td>{{ booking.earliest_ticket_datetime }}</td>
-        </tr>
-    </table>
+<h1>Your Booking</h1>
+<div class="container">
+    <div class="row">
+        <div class="col-sm"></div>
+        <div class="col-sm">
+            <table class="table">
+                <tr>
+                    <th>Booking id</th>
+                    <td>{{ booking.id }}</td>
+                </tr>
+                <tr>
+                    <th>Venue id</th>
+                    <td>{{ booking.venue_id }}</td>
+                </tr>
+                <tr>
+                    <th>Date</th>
+                    <td>{{ booking.datetime_event.date() }}</td>
+                </tr>
+                <tr>
+                    <th>Time</th>
+                    <td>{{ booking.datetime_event.time() }} UTC</td>
+                </tr>
+                <tr>
+                    <th>Your user id</th>
+                    <td>{{ booking.user_id }}</td>
+                </tr>
+                <tr>
+                    <th>Created at</th>
+                    <td>{{ booking.created_at }}</td>
+                </tr>
+                <tr>
+                    <th>Confirmation code</th>
+                    <td>{{ booking.confirmation_code }}</td>
+                </tr>
+                <tr>
+                    <th>Ticket creation earliest at</th>
+                    <td>{{ booking.earliest_ticket_datetime }}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-sm"></div>
+    </div>
 </div>
 {% endblock %}

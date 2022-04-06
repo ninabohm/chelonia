@@ -166,7 +166,7 @@ def get_bookings():
     content_type = request.headers.get('Content-Type')
     if content_type == 'application/json':
         return response
-    return render_template("bookings.html", bookings=bookings)
+    return render_template("bookings.html", bookings=bookings, user=current_user)
 
 
 @app.route('/booking/create', methods=['GET', 'POST'])
@@ -233,7 +233,7 @@ def get_tickets():
     content_type = request.headers.get('Content-Type')
     if content_type == 'application/json':
         return response
-    return render_template("tickets.html", tickets=tickets)
+    return render_template("tickets.html", tickets=tickets, user=current_user)
 
 
 @app.route('/ticket/<booking_id>', methods=['POST'])

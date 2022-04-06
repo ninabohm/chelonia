@@ -5,20 +5,54 @@
 {% endblock %}
 
 {% block content %}
-<h1>Account</h1>
+<h1>Account overview</h1>
 <p>Hello {{ user.first_name }} </p>
-<div>
-    <img src="/static/chelonia-turtle.svg" alt="chelonia-turtle">
-</div>
-<div>
-    <h3>Your data</h3>
-    <p>E-mail: {{ user.email }}</p>
-    <p>Venue e-mail: {{ user.venue_email }}</p>
-    <p>Bookings: {{ user.bookings }}</p>
-    <p>Address: {{ user.street }} {{ user.house_no }} {{ user.postal_code }} {{ user.city }}</p>
-    <p>Urban Sports Club membership number: {{ user.urban_sports_member_no }}</p>
-</div>
-<div>
-    <button class="btn btn-primary mt-4" type="submit" onclick="window.location.href='/user/logout'">Log out</button>
-</div>
+    <div class="row">
+        <div class="col-sm"></div>
+        <div class="col-sm">
+            <h3>Profile</h3>
+            <div>
+                <table class="table">
+                    <tr>
+                        <th>First name</th>
+                        <td>{{ user.first_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Last name</th>
+                        <td>{{ user.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Venue email</th>
+                        <td>{{ user.venue_email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date of birth</th>
+                        <td>{{ user.birthday }}</td>
+                    </tr>
+                    <tr>
+                        <th>Phone</th>
+                        <td>{{ user.phone }}</td>
+                    </tr>
+                    <tr>
+                        <th>Address</th>
+                        <td>{{ user.street }} {{ user.house_no }}, {{ user.postal_code }} {{ user.city }}</td>
+                    </tr>
+                    <tr>
+                        <th>Urban Sports Club number</th>
+                        <td>{{ user.urban_sports_membership_no }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <button class="btn btn-primary mt-4" type="submit" onclick="window.location.href='/user/logout'">Log out</button>
+            </div>
+            <div>
+                <img src="/static/chelonia-turtle.svg" alt="chelonia-turtle">
+            </div>
+        </div>
+        <div class="col-sm"></div>
 {% endblock %}
