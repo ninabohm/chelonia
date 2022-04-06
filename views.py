@@ -304,10 +304,8 @@ def enter_user_data(driver):
 
 
 def accept_privacy_and_book(driver):
-    privacy_field = driver.find_element(By.CLASS_NAME, "row  one-col-row no-row-hoverimage  row-2")
-    iterator = ActionChains(driver).move_to_element(privacy_field)
-    #checkbox_privacy = driver.find_element(By.CSS_SELECTOR, "drp-booking-data-processing-cb")
-    iterator.send_keys(Keys.TAB * 4).click().perform()
+    privacy_field = driver.find_element(By.XPATH, "//input[@id='drp-booking-data-processing-cb']")
+    privacy_field.click()
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
     time.sleep(1)
     app.logger.info("privacy accepted and booking finalized")
