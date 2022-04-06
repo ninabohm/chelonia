@@ -110,7 +110,7 @@ def create_venue():
         venue = Venue(venue_name, venue_url, venue_type)
         db.session.add(venue)
         db.session.commit()
-        app.logger.info(f"added venue {venue.venue_name} with id {venue.id}")
+        app.logger.info(f"added venue, name: {venue.venue_name}, id: {venue.id}, venue_type: {venue_type}")
         return redirect(url_for('get_venues'))
     return render_template("create_venue.html", form=form)
 
@@ -125,6 +125,7 @@ def get_venues():
             'id': venue.id,
             'venue_name': venue.venue_name,
             'venue_url': venue.venue_url,
+            'venue_type': venue.venue_type,
             'created_at': venue.created_at,
             'bookings': venue.bookings
         }
@@ -207,7 +208,7 @@ def change_to_correct_timezone(date_event, time_event):
     datetime_event_berlin = tz.localize(datetime_event_naive)
     datetime_event_utc = datetime_event_berlin.astimezone(pytz.UTC)
     datetime_event_removed = datetime_event_utc.replace(tzinfo=None)
-    app.logger.info(f"datetime_event naive / berlin / utc / removed: {datetime_event_naive} / {datetime_event_berlin} / {datetime_event_utc} / {datetime_event_removed}")
+    app.logger.info(f"datetime_event: {datetime_event_naive} naive, {datetime_event_berlin} Berlin time, {datetime_event_utc} UTC, {datetime_event_removed} (removed timezone)")
     return datetime_event_removed
 
 
@@ -241,12 +242,13 @@ def get_tickets():
 def create_ticket(booking_id):
     venue_type = db.session.query(Venue.venue_type).join(Booking).filter_by(id=booking_id).first()[0]
     if venue_type == "bouldering":
-        return start_ticket_bouldering(booking_id)
+        if check_if_ticket_possible_now(booking_id, datetime.utcnow()):
+            return start_ticket_bouldering(booking_id)
+        app.logger.info("here comes the scheduler")
 
     if venue_type == "swimming":
         if check_if_ticket_possible_now(booking_id, datetime.utcnow()):
             return start_ticket_swimming(booking_id, current_user.id)
-
         schedule_ticket(booking_id, str(datetime.utcnow()), current_user.id)
 
 
@@ -359,7 +361,16 @@ def create_ticket_schedule_task(booking_id, current_datetime_str, current_user_i
 
 
 def calculate_earliest_ticket_datetime(booking):
-    local = booking.datetime_event - timedelta(hours=96)
+    result = db.session.query(Venue.venue_type).filter_by(id=booking.venue_id)
+    for venue_type, in result:
+        if venue_type == "bouldering":
+            delta = timedelta(days=7)
+            local = booking.datetime_event - delta
+            app.logger.info(f"venue_type: {venue_type}, timedelta: {delta}")
+            return local.astimezone(pytz.UTC)
+    delta = timedelta(hours=96)
+    local = booking.datetime_event - delta
+    app.logger.info(f"venue_type {venue_type}, timedelta: {delta}")
     return local.astimezone(pytz.UTC)
 
 
