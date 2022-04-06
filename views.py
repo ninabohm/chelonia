@@ -170,6 +170,34 @@ def get_bookings():
     return render_template("bookings.html", bookings=bookings, user=current_user)
 
 
+@app.route('/booking/<booking_id>')
+@login_required
+def get_booking_by_id(booking_id):
+    booking = db.session.query(Booking).filter_by(id=booking_id).first()
+    data = []
+    booking.datetime_event = booking.datetime_event.astimezone(pytz.timezone('CET'))
+    booking.earliest_ticket_datetime = booking.earliest_ticket_datetime.astimezone(pytz.timezone('CET'))
+    obj = {
+        'id': booking.id,
+        'venue_id': booking.venue_id,
+        'datetime_event': booking.datetime_event,
+        'user_id': booking.user_id,
+        'created_at': booking.created_at,
+        'confirmation_code': booking.confirmation_code,
+        'ticket': booking.ticket
+    }
+    data.append(obj)
+    response = app.response_class(
+        response=json.dumps(data, default=str),
+        status=200,
+        mimetype='application/json'
+    )
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        return response
+    return render_template("booking_show.html", booking=booking)
+
+
 @app.route('/booking/create', methods=['GET', 'POST'])
 @login_required
 def create_booking():
@@ -257,21 +285,22 @@ def start_ticket_bouldering(booking_id):
     db.session.add(ticket)
     db.session.commit()
     app.logger.info(f"added ticket, id: {ticket.id}, user: {current_user.id}")
+
     driver = initialize_chrome_driver()
     open_venue_website(driver, booking_id)
 
-    # try:
-    choose_ticket_slot_bouldering(driver, booking_id)
-    enter_user_data(driver)
-    accept_privacy_and_book(driver)
-    if "Glückwunsch" in driver.page_source:
-        ticket.status = "CONFIRMED"
+    try:
+        choose_ticket_slot_bouldering(driver, booking_id)
+        enter_user_data(driver)
+        accept_privacy_and_book(driver)
+        if "Glückwunsch" in driver.page_source:
+            ticket.status = "CONFIRMED"
+            db.session.commit()
+    except NoSuchElementException:
+        app.logger.info("ticket slot not available, aborting")
+        ticket.status = "ABORTED"
         db.session.commit()
-    # except NoSuchElementException:
-    #     app.logger.info("ticket slot not available, aborting")
-    #     ticket.status = "ABORTED"
-    #     db.session.commit()
-    #     return
+        return
     return ticket
 
 

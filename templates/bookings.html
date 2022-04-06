@@ -12,6 +12,7 @@
             <th>Date</th>
             <th>Time</th>
             <th>Venue Id</th>
+            <th>Ticket status</th>
             <th>Confirmation code</th>
             <th>Ticket creation earliest at</th>
             <th>Ticket Id</th>
@@ -22,6 +23,7 @@
                 <td>{{ booking.datetime_event.date() }}</td>
                 <td>{{ booking.datetime_event.time() }}</td>
                 <td>{{ booking.venue_id }}</td>
+                <td>{{ booking.ticket.status }}</td>
                 <td>{{ booking.confirmation_code }}</td>
                 <td>{{ booking.earliest_ticket_datetime }}</td>
                 <td>{{ booking.ticket.id }}</td>
