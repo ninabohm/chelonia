@@ -216,7 +216,7 @@ def get_booking_from_form():
     venue_id = request.form.get("venue_id")
     date_event = request.form.get("date_event")
     time_event = request.form.get("time_event")
-    app.logger.info("got booking data from form")
+    app.logger.info("collected booking data from form")
     booking = post_booking_and_save(venue_id, date_event, time_event)
     return booking
 
@@ -298,7 +298,7 @@ def start_ticket_bouldering(booking_id):
             ticket.status = "CONFIRMED"
             db.session.commit()
     except NoSuchElementException:
-        app.logger.info("ticket slot not available, aborting")
+        app.logger.info(f"ticket slot not available, aborting, {NoSuchElementException}")
         ticket.status = "ABORTED"
         db.session.commit()
         return
