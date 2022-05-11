@@ -298,7 +298,7 @@ def start_ticket_bouldering(booking_id):
             ticket.status = "CONFIRMED"
             db.session.commit()
     except NoSuchElementException:
-        app.logger.info(f"ticket slot not available, aborting, {NoSuchElementException}")
+        app.logger.info(f"an error occured, aborting, {NoSuchElementException}")
         ticket.status = "ABORTED"
         db.session.commit()
         return
@@ -317,19 +317,20 @@ def choose_ticket_slot_bouldering(driver, booking_id):
     app.logger.info("ticket slot chosen")
 
 
+
 def enter_user_data(driver):
     driver.find_element(By.NAME, "first-name").send_keys(current_user.first_name)
+    app.logger.info(f"entered first name: {current_user.first_name}")
     driver.find_element(By.NAME, "last-name").send_keys(current_user.last_name)
-    driver.find_element(By.NAME, "date-of-birth").send_keys("14021994")
-    driver.find_element(By.NAME, "street-and-house-number").send_keys("Am Krögel 3")
-    driver.find_element(By.NAME, "postal-code").send_keys("10179")
-    driver.find_element(By.NAME, "city").send_keys("Berlin")
-    driver.find_element(By.NAME, "phone-mobile").send_keys("01736068206")
+    app.logger.info(f"entered last name: {current_user.last_name}")
     driver.find_element(By.NAME, "email").send_keys(current_user.venue_email)
+    app.logger.info(f"entered venue_email")
+
     driver.find_element(By.CSS_SELECTOR, "option[value='155589630']").click()
-    driver.find_element(By.NAME, "participant-additional-field-value").send_keys("122345")
+    driver.find_element(By.NAME, "participant-additional-field-value").send_keys(current_user.urban_sports_membership_no)
+    app.logger.info(f"entered urban_sports_membership_no")
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    time.sleep(1)
+    time.sleep(2)
     app.logger.info("user data entered")
 
 
@@ -453,7 +454,7 @@ def start_ticket_swimming(booking_id, current_user_id):
 def initialize_chrome_driver():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(executable_path=os.environ.get('CHROMEDRIVER_PATH'), chrome_options=chrome_options)
