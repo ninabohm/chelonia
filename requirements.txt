@@ -44,7 +44,7 @@ psycopg2-binary==2.9.3
 py==1.11.0
 pycparser==2.21
 PyGetWindow==0.0.9
-PyJWT==2.3.0
+PyJWT==2.4.0
 PyMsgBox==1.0.9
 pyOpenSSL==22.0.0
 pyparsing==3.0.7
